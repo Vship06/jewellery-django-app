@@ -1,0 +1,564 @@
+/* ==========================================================================
+   1. LUXURY TYPOGRAPHY ENGINE & ROOT ARCHITECTURE
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap');
+
+:root {
+    --royal-gold: #d4af37;
+    --royal-gold-hover: #b5952f;
+    --royal-ivory: #fcfbf9; 
+    --card-bg: #f7f6f2; 
+    --border-color: #eae1d3;
+    --text-dark: #1a1a1a;
+    --text-muted: #7a7a7a;
+    --royal-burgundy: #3b141c;
+    --accent-burgundy: #800020;
+}
+
+body {
+    font-family: 'Lato', sans-serif;
+    background-color: var(--royal-ivory);
+    color: var(--text-dark);
+}
+
+h1, h2, h3, h4, h5, h6, .brand-logo, .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+}
+
+.brand-logo {
+    font-weight: 700;
+    font-size: 1.75rem;
+    letter-spacing: 2px;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+/* ==========================================================================
+   2. NAVIGATION NAVIGATION HUB (Rich Burgundy Variant)
+   ========================================================================== */
+.royal-navbar {
+    background-color: var(--royal-burgundy); 
+    border-bottom: 2px solid var(--royal-gold); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.royal-navbar .brand-logo:hover {
+    color: var(--royal-gold-hover) !important;
+}
+
+.royal-navbar .nav-link {
+    transition: color 0.3s ease;
+}
+
+.royal-navbar .nav-link:hover {
+    color: var(--royal-gold) !important;
+}
+
+/* Elegant Minimalist Search Bar Styling */
+.royal-search-form {
+    width: 100%;
+    max-width: 400px;
+}
+
+.royal-search-form .input-group {
+    border-bottom: 1px solid rgba(244, 241, 233, 0.3);
+    transition: border-color 0.3s ease;
+}
+
+.royal-search-form .input-group:focus-within {
+    border-bottom: 1px solid var(--royal-gold);
+}
+
+.royal-search-form .input-group-text {
+    border: none;
+    padding-right: 0.5rem;
+}
+
+.royal-search-form input[type="search"] {
+    border: none;
+    color: var(--royal-ivory) !important;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.royal-search-form input[type="search"]::placeholder {
+    color: rgba(252, 251, 249, 0.5);
+    font-style: italic;
+}
+
+/* Luxury Interactive Vector Navigation Actions */
+.royal-nav-icon i {
+    color: var(--royal-ivory);
+    transition: color 0.3s ease, transform 0.3s ease;
+    display: inline-block;
+}
+
+.royal-nav-icon:hover i {
+    color: var(--royal-gold);
+    transform: translateY(-2px);
+}
+
+.royal-nav-icon:hover .bi-heart::before {
+    content: "\f415";
+}
+
+/* ==========================================================================
+   3. PRODUCT CATALOG GRIDS & HOVER INTERACTION OVERLAYS
+   ========================================================================== */
+.royal-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0; 
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    height: 100%;
+}
+
+.royal-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(59, 20, 28, 0.07);
+}
+
+.img-swap-container {
+    position: relative;
+    border-bottom: 1px solid var(--border-color);
+    background-color: transparent;
+    overflow: hidden;
+}
+
+.blended-img {
+    width: 100%;
+    height: 350px;
+    object-fit: cover;
+    padding: 1.5rem;
+    mix-blend-mode: multiply; 
+}
+
+.primary-img {
+    transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.secondary-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 2;
+}
+
+.royal-card:hover .has-swap .secondary-img {
+    opacity: 1;
+}
+
+.royal-card:hover .has-swap .primary-img {
+    opacity: 0;
+}
+
+.card-inline-wishlist-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: color 0.3s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-inline-wishlist-btn:hover {
+    color: #e63946; 
+    transform: scale(1.2);
+}
+
+.card-inline-wishlist-btn:hover .bi-heart::before {
+    content: "\f415" !important; 
+}
+
+.card-inline-wishlist-btn:active {
+    transform: scale(0.9);
+}
+
+.luxury-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--royal-burgundy);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.luxury-badge {
+    top: 15px;
+    left: 15px;
+    z-index: 10;
+    background-color: var(--royal-ivory);
+    color: var(--text-dark);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   4. CATEGORY NAVIGATION TABS & FILTERS
+   ========================================================================== */
+.royal-tab-container {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.75rem;
+    margin: 0 auto;
+}
+
+.royal-tab-link {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-decoration: none;
+    padding: 0.5rem 0.25rem;
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+.royal-tab-link:hover,
+.royal-tab-link.active {
+    color: var(--royal-burgundy); 
+}
+
+.royal-tab-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -13px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--royal-gold);
+    animation: luxuryFadeIn 0.3s ease forwards;
+}
+
+@keyframes luxuryFadeIn {
+    from { opacity: 0; transform: scaleX(0.8); }
+    to { opacity: 1; transform: scaleX(1); }
+}
+
+.clear-filters-btn {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-decoration: none;
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 2px;
+    transition: all 0.3s ease;
+}
+
+.clear-filters-btn:hover {
+    color: var(--royal-burgundy);
+    border-bottom-color: var(--royal-burgundy);
+}
+
+/* ==========================================================================
+   5. PAGE HEADERS & PAGINATION ARCHITECTURE
+   ========================================================================== */
+.luxury-title {
+    font-family: 'Playfair Display', serif;
+    color: var(--text-dark);
+    font-size: 3.5rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+}
+
+.luxury-divider {
+    width: 60px;
+    height: 2px;
+    background-color: var(--royal-gold);
+    margin-bottom: 1.5rem;
+    border-radius: 2px;
+}
+
+.luxury-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    color: #555;
+    font-style: italic;
+    letter-spacing: 0.5px;
+    line-height: 1.6;
+}
+
+.luxury-pagination .page-link {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease;
+    padding: 0;
+}
+
+.luxury-pagination .page-link:hover {
+    color: var(--royal-burgundy); 
+    background: transparent;
+}
+
+.luxury-pagination .disabled .page-link {
+    color: #dcdcdc;
+    background: transparent;
+}
+
+.luxury-pagination .current-page {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    color: var(--royal-burgundy) !important;
+    font-weight: 600;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--royal-gold);
+    padding-bottom: 4px;
+    border-radius: 0;
+}
+
+/* ==========================================================================
+   6. LUXURY AUTHENTICATION & INPUT WORKSPACE LAYOUTS
+   ========================================================================== */
+.luxury-auth-card {
+    background: #ffffff;
+    max-width: 520px;
+    width: 100%;
+    padding: 3rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
+}
+
+.luxury-brand-title {
+    color: var(--text-dark);
+    font-size: 2rem;
+    letter-spacing: -0.5px;
+}
+
+.tracking-widest {
+    letter-spacing: 2px;
+}
+
+.luxury-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #777777;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.luxury-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.6rem 0;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease;
+    border-radius: 0;
+}
+
+.luxury-input:focus {
+    outline: none;
+    border-bottom-color: var(--royal-burgundy); 
+}
+
+.form-text-muted {
+    font-size: 0.7rem;
+    color: #999999;
+    line-height: 1.3;
+}
+
+.luxury-error-box {
+    background: #fff8f8;
+    border-left: 3px solid #dc3545;
+}
+
+.btn-royal-submit {
+    background: #1a1a1a;
+    color: #ffffff;
+    border: 1px solid #1a1a1a;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.4s ease;
+}
+
+.btn-royal-submit:hover {
+    background: var(--royal-burgundy); 
+    border-color: var(--royal-burgundy);
+    letter-spacing: 3px; 
+}
+
+.luxury-link {
+    color: var(--royal-burgundy);
+    font-weight: 500;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s ease;
+}
+
+.luxury-link:hover {
+    border-bottom-color: var(--royal-burgundy);
+}
+
+.card-wrapper-link {
+    color: inherit;
+    display: block;
+    cursor: pointer;
+}
+.card-wrapper-link:hover .card-title {
+    color: var(--royal-burgundy) !important; 
+    transition: color 0.3s ease;
+}
+
+/* ==========================================================================
+   7. UNIFIED BRIGHT LUXURY ACCOUNT PORTFOLIO (CLIENT DOSSIER)
+   ========================================================================== */
+   
+#profile-container {
+    background-color: var(--royal-ivory) !important; 
+}
+
+.luxury-profile-card {
+    /* 🌟 SWAPPED: Pure white changed to a rich, warm champagne linen tint */
+    background-color: #f4f1ea !important; 
+    border: 1px solid rgba(212, 175, 55, 0.4) !important; 
+    box-shadow: 0 15px 40px rgba(59, 20, 28, 0.04) !important; /* Gentle warmth in shadow anchor */
+}
+
+.luxury-profile-card .font-serif {
+    color: #2a0e14 !important; /* Deep burgundy-tinted slate for sophisticated contrast */
+}
+
+.account-concierge-desc {
+    color: #4a453e !important; /* Muted espresso charcoal for smooth legibility */
+    font-size: 0.9rem;
+}
+
+.luxury-dossier-label {
+    color: var(--accent-burgundy) !important; 
+    font-size: 0.7rem !important;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+}
+
+.luxury-dossier-value {
+    color: var(--text-dark) !important; 
+    /* 🌟 BALANCED: Slightly brighter, clean cream background for the value inputs */
+    background-color: #fbfbfa !important; 
+    border: 1px solid rgba(212, 175, 55, 0.2) !important; /* Delicate gold-tinted framing */
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+}
+
+.gold-edit-link {
+    color: rgba(59, 20, 28, 0.5) !important;
+    transition: color 0.2s ease;
+}
+
+.gold-edit-link:hover {
+    color: var(--royal-gold) !important; 
+}
+
+/* ==========================================================================
+   8. ASYNCHRONOUS TOAST NOTIFICATIONS & UTILITIES
+   ========================================================================== */
+.luxury-toast {
+    position: fixed;
+    top: 100px;
+    right: -400px; 
+    background-color: var(--accent-burgundy); 
+    color: #ffffff;
+    padding: 18px 28px;
+    border: 1px solid var(--royal-gold); 
+    font-family: 'Playfair Display', serif;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    opacity: 0;
+}
+
+.luxury-toast.show {
+    right: 30px; 
+    opacity: 1;
+}
+
+.luxury-toast i {
+    color: var(--royal-gold); 
+    font-size: 1.1rem;
+}
+
+#back-to-top-btn {
+    opacity: 0;
+    transition: opacity 0.3s ease, background-color 0.3s ease, transform 0.3s ease !important;
+}
+
+#back-to-top-btn:hover {
+    background-color: var(--royal-gold) !important;
+    border-color: #ffffff !important;
+    transform: translateY(-3px);
+}
+
+#back-to-top-btn:hover i {
+    color: #1a1a1a !important;
+}
+
+/* ==========================================================================
+   9. GLOBAL PREMIUM SYSTEM FOOTER
+   ========================================================================== */
+.royal-footer {
+    background-color: #2a0e14; 
+    color: var(--royal-ivory);
+    padding: 5rem 0 2rem 0;
+    margin-top: 6rem;
+}
+
+.footer-links a {
+    color: rgba(252, 251, 249, 0.6);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.3s ease, padding-left 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: var(--royal-gold);
+    padding-left: 5px; 
+}
+
+.footer-newsletter input::placeholder {
+    color: rgba(252, 251, 249, 0.4);
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+}
+
+.footer-newsletter input:focus {
+    border-color: var(--royal-gold) !important;
+    box-shadow: none;
+}
+
+.footer-newsletter .btn:hover {
+    background-color: rgba(212, 175, 55, 0.1);
+}
+
+.footer-socials a {
+    color: rgba(252, 251, 249, 0.5);
+    font-size: 1.1rem;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.footer-socials a:hover {
+    color: var(--royal-gold);
+    transform: translateY(-3px);
+}

@@ -1,0 +1,56 @@
+{% extends 'products/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center min-vh-100 py-5">
+    <div class="luxury-auth-card animate-fade-in">
+        
+        <div class="text-center mb-5">
+            <h2 class="font-serif luxury-brand-title">Sign In</h2>
+            <p class="text-muted text-uppercase tracking-widest small mt-2">Welcome Back to Aurora</p>
+        </div>
+
+        <form method="POST" class="luxury-form">
+            {% csrf_token %}
+            
+            {% if form.errors or form.non_field_errors %}
+                <div class="luxury-error-box p-3 mb-4">
+                    <p class="small mb-0 text-danger">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        Invalid username or password. Please try again.
+                    </p>
+                </div>
+            {% endif %}
+
+            <div class="row g-4">
+                
+                <div class="col-12">
+                    <label class="luxury-label" for="id_username">Username</label>
+                    <input type="text" name="username" id="id_username" class="luxury-input" placeholder="Enter your username" autocomplete="username" required>
+                </div>
+
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="luxury-label" for="id_password">Password</label>
+                        <a href="{% url 'password_reset' %}" class="text-muted small text-decoration-none letter-spacing-1 element-hover-burgundy" style="font-size: 0.7rem; text-transform: uppercase;">Forgot?</a>
+                    </div>
+                    <input type="password" name="password" id="id_password" class="luxury-input" placeholder="••••••••" autocomplete="current-password" required>
+                </div>
+
+            </div>
+
+            <div class="mt-5 text-center">
+                <button type="submit" class="btn-royal-submit w-100 py-3 text-uppercase tracking-widest">
+                    Sign In
+                </button>
+                
+                <p class="mt-4 small text-muted">
+                    New to the collection? 
+                    <a href="{% url 'user-register' %}" class="luxury-link ms-1 text-decoration-none">Create Account</a>
+                </p>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

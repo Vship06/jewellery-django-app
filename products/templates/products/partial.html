@@ -1,0 +1,71 @@
+{% load custom_filter %}
+
+{% for product in products %}
+    <div class="col animate-fade-in">
+        <div class="card royal-card d-flex flex-column position-relative">
+            
+            <a href="{% url 'product-detail' pk=product.id %}" class="text-decoration-none card-wrapper-link">
+                {% if product.image_link %}
+                    {% with img_list=product.image_link|split_images %}
+                        <div class="img-swap-container {% if img_list|length > 1 %}has-swap{% endif %}">
+                            <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="blended-img primary-img">
+                            {% if img_list|length > 1 %}
+                                <img src="{{ img_list.1 }}" alt="{{ product.name }} Alternate View" class="blended-img secondary-img">
+                            {% endif %}
+                        </div>
+                    {% endwith %}
+                {% endif %}
+            </a>
+
+            <div class="card-body d-flex flex-column justify-content-between p-4 flex-grow-1">
+                
+                <a href="{% url 'product-detail' pk=product.id %}" class="text-decoration-none text-dark-neutral">
+                    <div class="text-center">
+                        <small class="text-uppercase fw-bold" style="color: var(--royal-gold); letter-spacing: 2px; font-size: 0.75rem;">
+                            {{ product.category|default:"Luxury Jewelry" }}
+                        </small>
+                        <h5 class="card-title mt-3 mb-1" style="line-height: 1.4; color: #1a1a1a; font-weight: 500;">
+                            {{ product.name }}
+                        </h5>
+                        
+                        <p class="text-muted small mb-2 text-uppercase" style="letter-spacing: 1px; font-size: 0.75rem;">
+                            {{ product.variants.all.0.metal_type|default:"18k Fine Jewelry" }}
+                        </p>
+                        
+                        <p class="luxury-price mb-4">
+                            {% if product.variants.all %}
+                                Rs. {{ product.variants.all.0.price|floatformat:2 }}
+                            {% else %}
+                                <span class="text-muted fst-italic" style="font-size: 0.9rem;">Price Upon Request</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </a>
+                
+                <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px dashed var(--border-color); z-index: 5; position: relative;">
+                    <p class="text-muted mb-0" style="font-family: monospace; font-size: 0.85rem;">
+                        REF: {{ product.sku }}
+                    </p>
+                    
+                    <form class="wishlist-toggle-form m-0" data-product-id="{{ product.id }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="variant_id" value="{{ product.variants.first.id }}">
+                        
+                        <button type="submit" class="btn p-2 wishlist-heart-btn" aria-label="Toggle Wishlist Layout">
+                            {% if product.variants.first.id|stringformat:"s" in wishlist %}
+                                <i class="bi bi-heart-fill text-burgundy" style="color: #800020; font-size: 1.2rem;"></i>
+                            {% else %}
+                                <i class="bi bi-heart text-muted" style="font-size: 1.2rem;"></i>
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <div class="col-12 text-center py-5">
+        <p class="fst-italic text-muted">No jewelry assets found in your database configuration.</p>
+    </div>
+{% endfor %}

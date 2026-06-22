@@ -1,0 +1,231 @@
+{% extends 'products/base.html' %}
+{% load static %}
+{% load custom_filter %}
+
+{% block content %}
+<div class="container pt-5 pb-5 mt-2">
+    <div class="mb-4 animate-fade-in">
+        <a href="{% url 'product-home' %}" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
+            ← Back to Royal Collection
+        </a>
+    </div>
+
+    <div class="row g-5">
+        <div class="col-lg-6 animate-fade-in">
+            <div class="luxury-image-wrapper text-center p-4">
+                {% if product.image_link %}
+                    {% with img_list=product.image_link|split_images %}
+                        <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="img-fluid luxury-product-img mb-3" id="main-product-image">
+                        
+                        {% if img_list|length > 1 %}
+                            <div class="row g-2 justify-content-center mt-2" id="product-thumb-gallery">
+                                {% for img_url in img_list %}
+                                    <div class="col-2 col-md-2">
+                                        <div class="thumb-frame border p-1" style="cursor: pointer; overflow: hidden; max-height: 80px; transition: border-color 0.3s ease;">
+                                            <img src="{{ img_url }}" alt="{{ product.name }} View {{ forloop.counter }}" class="img-fluid gallery-thumb-item" onclick="swapLuxuryStageImage(this)">
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                {% else %}
+                    <img src="{% static 'images/placeholder-jewelry.jpg' %}" alt="Aurora Jewelry Piece" class="img-fluid luxury-product-img" id="main-product-image">
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-6 animate-fade-in">
+            <div class="product-specification-panel ps-lg-4">
+                
+                <span class="text-uppercase tracking-widest text-muted small d-block mb-2">{{ product.category }}</span>
+                <h1 class="font-serif luxury-detail-title mb-1">{{ product.name }}</h1>
+
+                <div class="luxury-description mt-3 mb-4">
+                    <p class="font-serif italic text-dark-neutral" style="font-size: 1.05rem; line-height: 1.6; color: #4a4a4a;">
+                        {{ product.description }}
+                    </p>
+                </div>
+                
+                <div class="luxury-price-display mb-4">
+                    <h3 class="font-serif color-burgundy" id="dynamic-main-price" style="font-size: 1.8rem; font-weight: 600; color: #800020;">
+                        {% if product.variants.exists %}
+                           Rs. {{ product.variants.first.price|floatformat:2 }}
+                        {% endif %}
+                    </h3>
+                </div>
+
+                <hr class="luxury-divider mb-4">
+
+                <form id="add-to-vault-form">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-8 col-md-9">
+                            <label for="variant-selector" class="text-uppercase tracking-widest small text-muted d-block mb-2" style="font-size: 0.7rem; font-weight: 600;">
+                                Select Configuration
+                            </label>
+                            <select id="variant-selector" name="variant_id" class="form-select rounded-0 py-2" style="border-color: #dddddd; font-size: 0.9rem;">
+                                {% for variant in product.variants.all %}
+                                    <option value="{{ variant.id }}" data-price="{{ variant.price }}">
+                                        {{ variant.metal_type }} {% if variant.size_or_length %}({{ variant.size_or_length }}){% endif %} 
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-4 col-md-3">
+                            <label for="quantity-input" class="text-uppercase tracking-widest small text-muted d-block mb-2" style="font-size: 0.7rem; font-weight: 600;">
+                                Quantity
+                            </label>
+                            <input type="number" 
+                                id="quantity-input" 
+                                name="quantity" 
+                                value="1" 
+                                min="1" 
+                                max="10" 
+                                class="form-control rounded-0 py-2 text-center text-dark font-serif" 
+                                style="border-color: #dddddd; font-size: 0.9rem;">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest py-3" style="font-size: 0.85rem; letter-spacing: 0.15em; background-color: #111111;">
+                        Add to Shopping Vault
+                    </button>
+                    
+                    <button type="button" id="detail-wishlist-toggle-btn" class="btn btn-outline-dark rounded-0 px-4 py-3 text-uppercase tracking-widest mt-2 w-100" style="font-size: 0.85rem; letter-spacing: 0.15em;">
+                        {% if product.variants.first.id|stringformat:"s" in wishlist %}
+                            <i class="bi bi-heart-fill me-2" id="detail-heart-icon" style="color: #800020;"></i> 
+                            <span id="detail-wishlist-text">In Your Wishlist</span>
+                        {% else %}
+                            <i class="bi bi-heart me-2" id="detail-heart-icon"></i> 
+                            <span id="detail-wishlist-text">Add To Wishlist Vault</span>
+                        {% endif %}
+                    </button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="luxury-notification" class="luxury-toast d-flex align-items-center gap-3">
+    <i class="bi bi-shield-check"></i>
+    <span id="toast-message">Allocating to your shopping vault...</span>
+</div>
+
+<script>
+    let autoScrollTimer = null;
+    let currentImageIndex = 0;
+
+    // Gallery Image Swapping Logic
+    function swapLuxuryStageImage(element) {
+        const stageImage = document.getElementById("main-product-image");
+        if (stageImage && element) {
+            stageImage.style.opacity = 0.3;
+            
+            setTimeout(() => {
+                stageImage.src = element.src;
+                stageImage.style.opacity = 1;
+            }, 150);
+            
+            document.querySelectorAll('#product-thumb-gallery .thumb-frame').forEach(el => {
+                el.style.borderColor = "#dee2e6";
+            });
+            element.closest('.thumb-frame').style.borderColor = "#111111";
+        }
+    }
+
+    function startImageAutoScroll() {
+        const thumbItems = document.querySelectorAll('.gallery-thumb-item');
+        if (thumbItems.length <= 1) return;
+
+        autoScrollTimer = setInterval(() => {
+            currentImageIndex = (currentImageIndex + 1) % thumbItems.length;
+            const nextThumb = thumbItems[currentImageIndex];
+            swapLuxuryStageImage(nextThumb);
+        }, 4000); 
+    }
+
+    function stopImageAutoScroll() {
+        if (autoScrollTimer) {
+            clearInterval(autoScrollTimer);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const addForm = document.getElementById('add-to-vault-form');
+        const variantSelector = document.getElementById('variant-selector');
+        const priceDisplay = document.getElementById('dynamic-main-price');
+        const stageImgElement = document.getElementById("main-product-image");
+
+        if (stageImgElement) {
+            stageImgElement.style.transition = "opacity 0.2s ease-in-out";
+        }
+
+        // Initialize Image Rotation Engine
+        startImageAutoScroll();
+
+        const galleryContainer = document.getElementById("product-thumb-gallery");
+        if (galleryContainer) {
+            galleryContainer.addEventListener("mouseenter", stopImageAutoScroll);
+            galleryContainer.addEventListener("mouseleave", startImageAutoScroll);
+        }
+        
+        // 1. DYNAMIC PRICE SWITCHER
+        if (variantSelector && priceDisplay) {
+            variantSelector.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const newPrice = selectedOption.getAttribute('data-price');
+                if (newPrice) {
+                    priceDisplay.innerText = "Rs. " + parseFloat(newPrice).toFixed(2);
+                }
+            });
+        }
+
+        // 2. ASYNCHRONOUS BACKGROUND VAULT TRANSACTION HANDLER
+        if (addForm) {
+            addForm.addEventListener('submit', function(e) {
+                e.preventDefault(); 
+
+                const formData = new FormData(this);
+
+                fetch('/product/add-to-cart/', {
+                    method: 'POST',
+                    body: formData 
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error("Network transaction failed.");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        const counterElement = document.getElementById('cart-counter');
+                        if (counterElement) {
+                            counterElement.innerText = data.cart_count;
+                        }
+                        
+                        const toast = document.getElementById('luxury-notification');
+                        const toastMsg = document.getElementById('toast-message');
+
+                        if (toast && toastMsg) {
+                            toastMsg.innerText = "Added to your shopping vault.";
+                            toast.classList.add('show');
+
+                            setTimeout(() => {
+                                toast.classList.remove('show');
+                            }, 3500);
+                        }
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('AJAX Error:', error);
+                    alert("Could not process vault allocation at this time.");
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

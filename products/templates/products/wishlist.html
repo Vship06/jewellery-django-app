@@ -1,0 +1,101 @@
+{% extends 'products/base.html' %}
+{% load static %}
+{% load custom_filter %} 
+
+{% block content %}
+<div class="container pt-5 pb-5 mt-2">
+    
+    <div class="mb-4 animate-fade-in">
+        <a href="{% url 'product-home' %}" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
+            ← Continue Browsing Collection
+        </a>
+    </div>
+
+    <h1 class="font-serif text-uppercase tracking-wider mb-5" style="font-size: 2rem; color: #111111;">Your Curated Wishlist</h1>
+
+    <div class="row g-4">
+        {% for item in wishlist_items %}
+            <div class="col-lg-4 col-md-6 col-sm-12 animate-fade-in wishlist-item-card">
+                <div class="card h-100 border rounded-0 p-3 bg-white shadow-sm transition-hover">
+                    
+                    <div class="d-flex align-items-center justify-content-center border-bottom pb-3 mb-3 bg-light-neutral" style="height: 220px; overflow: hidden; background-color: #fafafa;">
+                        {% if item.variant.product.image_link %}
+                            {% with img_list=item.variant.product.image_link|split_images %}
+                                <img src="{{ img_list.0 }}" alt="{{ item.variant.product.name }}" class="img-fluid transition-scale" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                            {% endwith %}
+                        {% else %}
+                            <div class="text-center text-muted">
+                                <i class="bi bi-gem d-block mb-1" style="font-size: 1.5rem; color: #d4af37;"></i>
+                                <span style="font-size: 0.65rem; letter-spacing: 1px;">AURORA</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-body p-0 d-flex flex-column justify-content-between">
+                        <div>
+                            <span class="text-uppercase tracking-widest text-muted d-block mb-1" style="font-size: 0.7rem; letter-spacing: 2px;">{{ item.variant.product.category }}</span>
+                            <h5 class="font-serif text-dark mb-2" style="font-size: 1.15rem; color: #111111; line-height: 1.3;">{{ item.variant.product.name }}</h5>
+                            
+                            <p class="text-uppercase tracking-wider text-muted mb-3" style="font-size: 0.75rem;">
+                                Configuration: <span class="text-dark">{{ item.variant.metal_type }}</span>
+                                {% if item.variant.size_or_length %}({{ item.variant.size_or_length }}){% endif %}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="font-serif font-semibold mb-3" style="color: #800020; font-size: 1.25rem;">
+                                Rs. {{ item.variant.price|floatformat:2 }}
+                            </p>
+
+                            <div class="d-flex flex-column gap-2">
+                                
+                                <form class="ajax-wishlist-add-to-cart-form m-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="variant_id" value="{{ item.variant.id }}">
+                                    <input type="hidden" name="quantity" value="1"> 
+                                    
+                                    <button type="submit" class="btn btn-outline-dark rounded-0 w-100 text-uppercase tracking-widest py-2" style="font-size: 0.7rem; letter-spacing: 1px;">
+                                        <i class="bi bi-bag me-1"></i> Add To Vault
+                                    </button>
+                                </form>
+
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'product-detail' item.variant.product.pk %}" class="btn btn-light border rounded-0 w-50 text-uppercase tracking-widest py-2" style="font-size: 0.7rem; letter-spacing: 1px; background-color: #fcfcfc;">
+                                        View
+                                    </a>
+
+                                    <form class="ajax-wishlist-remove-form w-50 m-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="variant_id" value="{{ item.variant.id }}">
+                                        <button type="submit" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest py-2" style="font-size: 0.7rem; letter-spacing: 1px; background-color: #111111;">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5 border animate-fade-in" style="background-color: #faf9f6;">
+                <div class="py-4">
+                    <i class="bi bi-heart text-muted mb-3 d-block" style="font-size: 2rem; opacity: 0.4;"></i>
+                    <p class="font-serif italic text-muted mb-4" style="font-size: 1.1rem;">Your curated wishlist is currently empty.</p>
+                    <a href="{% url 'product-home' %}" class="btn btn-dark rounded-0 px-4 py-2 text-uppercase tracking-widest small" style="font-size: 0.75rem; background-color: #111111; letter-spacing: 1.5px;">
+                        Explore Royal Masterpieces
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<div id="luxury-notification" class="luxury-toast d-flex align-items-center gap-3">
+    <i class="bi bi-shield-check"></i>
+    <span id="toast-message">Allocating to your shopping vault...</span>
+</div>
+{% endblock %}

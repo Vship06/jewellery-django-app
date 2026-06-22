@@ -1,0 +1,128 @@
+{% extends "products/base.html" %} 
+{% load custom_filter %} 
+
+{% block title %}The Royal Collection | Aurora{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5 mt-4">
+    <h2 class="luxury-title">The Royal Collection</h2>
+    
+    <div class="luxury-divider mx-auto"></div>
+    
+    <p class="luxury-subtitle mx-auto" style="max-width: 650px;">
+        Discover hand-crafted pieces.
+    </p>
+    <div class="position-relative mx-auto mt-4" style="max-width: fit-content;">
+        <div class="d-flex justify-content-center align-items-center gap-4 royal-tab-container">
+            
+            <a href="javascript:void(0);" class="royal-tab-link {% if not selected_categories %}active{% endif %}" data-category="all">
+                All Collections
+            </a>
+
+            {% for category in categories %}
+                <a href="javascript:void(0);" class="royal-tab-link {% if category in selected_categories %}active{% endif %}" data-category="{{ category }}">
+                    {{ category }}
+                </a>
+            {% endfor %}
+
+            {% if selected_categories or request.GET.q %}
+                <div class="text-center mt-4 animate-fade-in">
+                    <div id="clear-filters-wrapper" class="text-center mt-3 {% if not selected_categories and not request.GET.q %}d-none{% endif %}">
+                    <a href="javascript:void(0);" class="clear-filters-btn royal-tab-link" data-category="all">
+                        <i class="bi bi-x-circle me-1"></i> Clear Filters
+                    </a>
+                </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div id="product-display-container" class="pt-2">
+    
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="infinite-products-grid">
+        {% include "products/partial.html" %}
+    </div>
+    
+    <div id="scroll-sentinel" class="text-center py-5 mt-4" 
+         data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}none{% endif %}">
+         
+         <button id="load-more-btn" class="btn btn-outline-dark rounded-0 px-5 py-3 text-uppercase tracking-widest {% if not page_obj.has_next %}d-none{% endif %}" style="font-size: 0.75rem; letter-spacing: 2px;">
+             View More Masterpieces
+         </button>
+
+         <div class="spinner-border text-dark d-none" role="status" id="infinite-loader" style="width: 2rem; height: 2rem; border-width: 0.2em;"></div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".royal-tab-link").forEach(tab => {
+            tab.addEventListener("click", function(e) {
+                e.preventDefault();
+                
+                // Synchronize visual state classes instantly across all navigation elements
+                document.querySelectorAll(".royal-tab-link").forEach(t => t.classList.remove("active"));
+                this.classList.add("active");
+
+                const category = this.getAttribute("data-category");
+                const newUrlParams = new URLSearchParams();
+                
+                // Retain any active search criteria text query vectors if they exist
+                const currentSearchQuery = new URLSearchParams(window.location.search).get("q");
+                if (currentSearchQuery) {
+                    newUrlParams.set("q", currentSearchQuery);
+                }
+                
+                if (category !== "all") {
+                    newUrlParams.set("category", category);
+                }
+
+                // 1. Quietly transition the browser URL string window without dropping cache execution layers
+                const targetUrl = window.location.pathname + (newUrlParams.toString() ? "?" + newUrlParams.toString() : "");
+                window.history.pushState({ path: targetUrl }, "", targetUrl);
+
+                // 2. Query page 1 items of the requested filter set via asynchronous background fetch
+                const productsGrid = document.getElementById("infinite-products-grid");
+                const sentinel = document.getElementById("scroll-sentinel");
+                const loader = document.getElementById("infinite-loader");
+                const loadMoreBtn = document.getElementById("load-more-btn");
+
+                if (loader) loader.classList.remove("d-none");
+                if (loadMoreBtn) loadMoreBtn.classList.add("d-none");
+
+                fetch(targetUrl, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error("Catalog filtration network error.");
+                    return response.json(); // 🌟 Updated to accurately parse JSON structures!
+                })
+                .then(data => {
+                    // Update grid elements seamlessly with no viewport flicker
+                    if (productsGrid) {
+                        productsGrid.innerHTML = data.html;
+                    }
+                    
+                    // Reset infinite counters to verify subsequent row availability
+                    if (sentinel) {
+                        if (data.has_next) {
+                            sentinel.setAttribute("data-next-page", "2");
+                            if (loadMoreBtn) loadMoreBtn.classList.remove("d-none");
+                        } else {
+                            sentinel.setAttribute("data-next-page", "none");
+                            if (loadMoreBtn) loadMoreBtn.classList.add("d-none");
+                        }
+                    }
+                    if (loader) loader.classList.add("d-none");
+                })
+                .catch(err => {
+                    console.error("Zero-reload execution failed:", err);
+                    if (loader) loader.classList.add("d-none");
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
