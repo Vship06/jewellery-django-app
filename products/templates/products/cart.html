@@ -1,9 +1,11 @@
 {% extends 'products/base.html' %}
 {% load static %}
-{% load custom_filter %} {% block content %}
+{% load custom_filter %} 
+
+{% block content %}
 <div class="container pt-4 pb-5">
     <div class="mb-4 animate-fade-in">
-        <a href="{% url 'product-home' %}" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
+        <a href="/" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
             ← Continue Browsing Collection
         </a>
     </div>
@@ -24,15 +26,14 @@
                         </thead>
                         <tbody>
                             {% for item in cart_items %}
-                                <tr>
+                                <tr data-item-id="{{ item.id }}">
                                     <td class="ps-0 py-4" style="min-width: 300px;">
                                         <div class="d-flex align-items-center">
                                             
                                             <div class="product-image-frame border bg-white d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; min-width: 60px; padding: 4px;">
-                                                
-                                                {% if item.variant.product.image_link %}
-                                                    {% with img_list=item.variant.product.image_link|split_images %}
-                                                        <img src="{{ img_list.0 }}" alt="{{ item.variant.product.name }}" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                                                {% if item.product.image_link %}
+                                                    {% with img_list=item.product.image_link|split_images %}
+                                                        <img src="{{ img_list.0 }}" alt="{{ item.product.name }}" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: contain;">
                                                     {% endwith %}
                                                 {% else %}
                                                     <div class="text-center text-muted d-flex flex-column align-items-center justify-content-center">
@@ -42,18 +43,18 @@
                                             </div>
 
                                             <div class="ms-4">
-                                                <h5 class="font-serif mb-1" style="font-size: 1.05rem; color: #222222; line-height: 1.2;">{{ item.variant.product.name }}</h5>
+                                                <h5 class="font-serif mb-1" style="font-size: 1.05rem; color: #222222; line-height: 1.2;">{{ item.product.name }}</h5>
                                                 <p class="text-uppercase tracking-wider text-muted mb-0" style="font-size: 0.725rem;">
-                                                    Configuration: {{ item.variant.metal_type }} 
-                                                    {% if item.variant.size_or_length %}({{ item.variant.size_or_length }}){% endif %}
+                                                    Configuration: {{ item.productvariant.metal_type }} 
+                                                    {% if item.productvariant.size_or_length %}({{ item.productvariant.size_or_length }}){% endif %}
                                                 </p>
-                                                <p class="text-muted mb-1" style="font-size: 0.725rem;">SKU: {{ item.variant.variant_sku }}</p>
+                                                <p class="text-muted mb-1" style="font-size: 0.725rem;">SKU: {{ item.productvariant.variant_sku|default:item.product.sku }}</p>
                                                 
-                                                <form action="{% url 'product-cart' %}" method="POST" class="d-inline">
+                                                <form action="{% url 'product-remove' %}" method="POST" class="ajax-cart-remove-form d-inline m-0 p-0">
                                                     {% csrf_token %}
-                                                    <input type="hidden" name="variant_id" value="{{ item.variant.id }}">
-                                                    <input type="hidden" name="action" value="remove">
-                                                    <button type="submit" class="p-0 text-decoration-none text-uppercase tracking-widest text-danger link-hover-fade" style="font-size: 0.6rem; font-weight: 600; background: none; border: none; letter-spacing: 0.05em;">
+                                                    <input type="hidden" name="item_id" value="{{ item.id }}">
+                                                    <input type="hidden" name="type" value="cart">
+                                                    <button type="submit" class="p-0 text-decoration-none text-uppercase tracking-widest text-danger link-hover-fade" style="font-size: 0.6rem; font-weight: 600; background: none; border: none; letter-spacing: 0.05em; cursor: pointer;">
                                                         Remove Item From Vault
                                                     </button>
                                                 </form>
@@ -61,30 +62,33 @@
                                         </div>
                                     </td>
                                     
-                                    <td class="text-center py-4">
+                                   <td class="text-center py-4">
                                         <div class="d-inline-flex align-items-center border px-2 py-1 bg-white">
-                                            <form action="{% url 'product-cart' %}" method="POST" class="m-0 p-0">
+                                            
+                                            <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-cart-qty-form m-0 p-0">
                                                 {% csrf_token %}
-                                                <input type="hidden" name="variant_id" value="{{ item.variant.id }}">
-                                                <input type="hidden" name="action" value="update_quantity">
-                                                <input type="hidden" name="quantity" value="{{ item.quantity|add:"-1" }}">
+                                                <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                                <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
+                                                <input type="hidden" name="quantity" value="-1">
+                                                <input type="hidden" name="override_action" value="increment">
                                                 <button type="submit" class="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold" {% if item.quantity <= 1 %}disabled style="opacity: 0.3;"{% endif %}>-</button>
                                             </form>
 
-                                            <span class="px-2 font-serif small text-dark" style="min-width: 24px;">{{ item.quantity }}</span>
+                                            <span class="px-2 font-serif small text-dark item-qty-label" style="min-width: 24px;">{{ item.quantity }}</span>
 
-                                            <form action="{% url 'product-cart' %}" method="POST" class="m-0 p-0">
+                                            <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-cart-qty-form m-0 p-0">
                                                 {% csrf_token %}
-                                                <input type="hidden" name="variant_id" value="{{ item.variant.id }}">
-                                                <input type="hidden" name="action" value="update_quantity">
-                                                <input type="hidden" name="quantity" value="{{ item.quantity|add:"1" }}">
+                                                <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                                <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
+                                                <input type="hidden" name="quantity" value="1">
+                                                <input type="hidden" name="override_action" value="increment">
                                                 <button type="submit" class="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold">+</button>
                                             </form>
                                         </div>
                                     </td>
 
-                                    <td class="text-end pe-0 py-4 font-serif text-dark font-semibold" style="font-size: 1.1rem;">
-                                        Rs. {{ item.item_total }}
+                                    <td class="text-end pe-0 py-4 font-serif text-dark font-semibold item-total-price" style="font-size: 1.1rem;">
+                                        Rs. {{ item.quantity|multiply:item.productvariant.price|floatformat:2 }}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -99,7 +103,7 @@
                     
                     <div class="d-flex justify-content-between mb-3 text-uppercase tracking-widest small text-muted" style="font-size: 0.75rem;">
                         <span>Subtotal</span>
-                        <span class="font-serif text-dark">Rs. {{ grand_total }}</span>
+                        <span class="font-serif text-dark" id="cart-grand-total">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-3 text-uppercase tracking-widest small text-muted" style="font-size: 0.75rem;">
                         <span>Secured Shipping Allocation</span>
@@ -110,7 +114,7 @@
 
                     <div class="d-flex justify-content-between align-items-end mb-4">
                         <span class="text-uppercase tracking-widest small font-semibold text-dark" style="font-size: 0.75rem;">Estimated Total</span>
-                        <span class="font-serif font-semibold" style="font-size: 1.4rem; line-height: 1; color: #800020;">Rs. {{ grand_total }}</span>
+                        <span class="font-serif font-semibold" id="cart-estimated-total" style="font-size: 1.4rem; line-height: 1; color: #800020;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
                     </div>
 
                     <a href="#" class="btn d-block text-center w-100 py-3 text-uppercase tracking-widest text-decoration-none rounded-0 mb-2" style="background-color: #111111; color: #ffffff; font-size: 0.8rem; letter-spacing: 2px;">
@@ -126,7 +130,7 @@
     {% else %}
         <div class="text-center py-5 border bg-light-neutral animate-fade-in" style="background-color: #faf9f6;">
             <p class="font-serif italic text-muted mb-4" style="font-size: 1.1rem;">Your shopping vault is currently empty.</p>
-            <a href="{% url 'product-home' %}" class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest small" style="font-size: 0.75rem;">
+            <a href="/" class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest small" style="font-size: 0.75rem;">
                 Explore Royal Masterpieces
             </a>
         </div>

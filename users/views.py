@@ -4,8 +4,6 @@ from .form import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
 from .models import UserProfile
 from django.contrib.auth import logout
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
@@ -35,7 +33,12 @@ def register(request):
 
 @require_POST
 def logout_view(request):
-    logout(request)
+    if request.method == "POST":
+        logout(request)
+        messages.success(
+            request,
+            "You have signed out.",
+        )
     return redirect("/")
 
 

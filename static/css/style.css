@@ -471,28 +471,37 @@ h1, h2, h3, h4, h5, h6, .brand-logo, .font-serif {
 }
 
 /* ==========================================================================
-   8. ASYNCHRONOUS TOAST NOTIFICATIONS & UTILITIES
+   8. ASYNCHRONOUS TOAST NOTIFICATIONS & UTILITIES (Unified Core)
    ========================================================================== */
 .luxury-toast {
     position: fixed;
-    top: 100px;
-    right: -400px; 
+    bottom: 30px;
+    left: 30px;
     background-color: var(--accent-burgundy); 
     color: #ffffff;
-    padding: 18px 28px;
+    padding: 16px 24px;
     border: 1px solid var(--royal-gold); 
     font-family: 'Playfair Display', serif;
     letter-spacing: 1px;
-    font-size: 0.9rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    font-size: 0.85rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
     z-index: 9999;
-    transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    
+    /* Smooth opacity transitions and clean transform states */
     opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none; /* Prevents unwanted element hover trapping */
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
+/* 🟢 Active visibility layout modifier */
 .luxury-toast.show {
-    right: 30px; 
     opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .luxury-toast i {
@@ -561,4 +570,37 @@ h1, h2, h3, h4, h5, h6, .brand-logo, .font-serif {
 .footer-socials a:hover {
     color: var(--royal-gold);
     transform: translateY(-3px);
+}
+
+/* Ensure this exists in your static/css/style.css file */
+.luxury-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    border: 1px solid rgba(212, 175, 55, 0.3); /* Premium subtle gold framing */
+    padding: 16px 24px;
+    z-index: 2000;
+    display: none;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.luxury-toast.show {
+    display: flex !important;
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

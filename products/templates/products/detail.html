@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container pt-5 pb-5 mt-2">
     <div class="mb-4 animate-fade-in">
-        <a href="{% url 'product-home' %}" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
+        <a href="/" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
             ← Back to Royal Collection
         </a>
     </div>
@@ -59,6 +59,7 @@
 
                 <form id="add-to-vault-form">
                     {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
                     
                     <div class="row g-3 mb-4">
                         <div class="col-8 col-md-9">
@@ -94,7 +95,7 @@
                     </button>
                     
                     <button type="button" id="detail-wishlist-toggle-btn" class="btn btn-outline-dark rounded-0 px-4 py-3 text-uppercase tracking-widest mt-2 w-100" style="font-size: 0.85rem; letter-spacing: 0.15em;">
-                        {% if product.variants.first.id|stringformat:"s" in wishlist %}
+                        {% if product.id in user_wishlist_ids %}
                             <i class="bi bi-heart-fill me-2" id="detail-heart-icon" style="color: #800020;"></i> 
                             <span id="detail-wishlist-text">In Your Wishlist</span>
                         {% else %}
@@ -118,7 +119,6 @@
     let autoScrollTimer = null;
     let currentImageIndex = 0;
 
-    // Gallery Image Swapping Logic
     function swapLuxuryStageImage(element) {
         const stageImage = document.getElementById("main-product-image");
         if (stageImage && element) {
@@ -154,7 +154,6 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-        const addForm = document.getElementById('add-to-vault-form');
         const variantSelector = document.getElementById('variant-selector');
         const priceDisplay = document.getElementById('dynamic-main-price');
         const stageImgElement = document.getElementById("main-product-image");
@@ -163,7 +162,6 @@
             stageImgElement.style.transition = "opacity 0.2s ease-in-out";
         }
 
-        // Initialize Image Rotation Engine
         startImageAutoScroll();
 
         const galleryContainer = document.getElementById("product-thumb-gallery");
@@ -172,7 +170,7 @@
             galleryContainer.addEventListener("mouseleave", startImageAutoScroll);
         }
         
-        // 1. DYNAMIC PRICE SWITCHER
+        // Dynamic Live Price Text Calculator Switcher
         if (variantSelector && priceDisplay) {
             variantSelector.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
@@ -180,50 +178,6 @@
                 if (newPrice) {
                     priceDisplay.innerText = "Rs. " + parseFloat(newPrice).toFixed(2);
                 }
-            });
-        }
-
-        // 2. ASYNCHRONOUS BACKGROUND VAULT TRANSACTION HANDLER
-        if (addForm) {
-            addForm.addEventListener('submit', function(e) {
-                e.preventDefault(); 
-
-                const formData = new FormData(this);
-
-                fetch('/product/add-to-cart/', {
-                    method: 'POST',
-                    body: formData 
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error("Network transaction failed.");
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        const counterElement = document.getElementById('cart-counter');
-                        if (counterElement) {
-                            counterElement.innerText = data.cart_count;
-                        }
-                        
-                        const toast = document.getElementById('luxury-notification');
-                        const toastMsg = document.getElementById('toast-message');
-
-                        if (toast && toastMsg) {
-                            toastMsg.innerText = "Added to your shopping vault.";
-                            toast.classList.add('show');
-
-                            setTimeout(() => {
-                                toast.classList.remove('show');
-                            }, 3500);
-                        }
-                    } else {
-                        alert("Error: " + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('AJAX Error:', error);
-                    alert("Could not process vault allocation at this time.");
-                });
             });
         }
     });

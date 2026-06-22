@@ -10,11 +10,13 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!activeForm) return;
 
         e.preventDefault(); 
+        e.stopImmediatePropagation(); // Prevents multiple bindings from executing side-by-side
 
         const dataPayload = new FormData(activeForm);
         const targetHeartIcon = activeForm.querySelector(".wishlist-heart-btn i");
+        const targetActionUrl = activeForm.getAttribute("action") || "/product/add-to-wishlist/";
 
-        fetch("/product/add-to-wishlist/", { 
+        fetch(targetActionUrl, { 
             method: "POST",
             body: dataPayload,
             headers: { "X-Requested-With": "XMLHttpRequest" }
@@ -25,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(data => {
             if (data.status === "success") {
-                if (data.action === "added") {
+                if (targetHeartIcon.classList.contains("bi-heart")) {
                     targetHeartIcon.className = "bi bi-heart-fill";
                     targetHeartIcon.style.setProperty("color", "#800020", "important");
                 } else {
@@ -33,7 +35,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     targetHeartIcon.style.color = "";
                 }
 
-                // 🌟 LIVE UPDATE: Sync Navbar Wishlist Badge Counter
                 const wishlistCounter = document.getElementById("wishlist-counter");
                 if (wishlistCounter) {
                     wishlistCounter.innerText = data.wishlist_count;
@@ -54,9 +55,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const detailWishlistBtn = document.getElementById("detail-wishlist-toggle-btn");
     
     if (detailWishlistBtn) {
-        detailWishlistBtn.addEventListener("click", function() {
+        detailWishlistBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            e.stopPropagation(); 
+            e.stopImmediatePropagation(); 
+
             const activeVariantSelector = document.getElementById("variant-selector");
             const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+            const activeForm = document.getElementById("add-to-vault-form");
             
             if (!activeVariantSelector || !csrfTokenElement) {
                 console.error("Required detail showroom elements are missing from the DOM.");
@@ -65,20 +71,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const currentSelectedVariantId = activeVariantSelector.value;
             const dataPayload = new FormData();
+            
+            if (activeForm) {
+                const productId = activeForm.querySelector('[name="product_id"]');
+                if (productId) dataPayload.append("product_id", productId.value);
+            }
+            
             dataPayload.append("variant_id", currentSelectedVariantId);
+            dataPayload.append("type", "wishlist");
+            dataPayload.append("quantity", "1"); 
             dataPayload.append("csrfmiddlewaretoken", csrfTokenElement.value);
 
             fetch("/product/add-to-wishlist/", {
                 method: "POST",
-                body: dataPayload
+                body: dataPayload,
+                headers: { "X-Requested-With": "XMLHttpRequest" }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error("Server rejected wishlist allocation.");
+                return response.json();
+            })
             .then(data => {
-                if (data.status === "success") {
+                if (data.status === "success" || data.action === "exists") {
                     const detailHeart = document.getElementById("detail-heart-icon");
                     const detailText = document.getElementById("detail-wishlist-text");
 
-                    if (data.action === "added") {
+                    if (detailHeart.classList.contains("bi-heart")) {
                         detailHeart.className = "bi bi-heart-fill me-2";
                         detailHeart.style.setProperty("color", "#800020", "important");
                         detailText.innerText = "In Your Wishlist";
@@ -88,7 +106,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         detailText.innerText = "Add To Wishlist Vault";
                     }
 
-                    // 🌟 LIVE UPDATE: Sync Navbar Wishlist Badge Counter from Detail Page
                     const wishlistCounter = document.getElementById("wishlist-counter");
                     if (wishlistCounter) {
                         wishlistCounter.innerText = data.wishlist_count;
@@ -98,6 +115,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             wishlistCounter.classList.add("d-none");
                         }
                     }
+                    
+                    const toast = document.getElementById("luxury-notification");
+                    const toastMsg = document.getElementById("toast-message");
+                    if (toast && toastMsg && data.action !== "exists") {
+                        toastMsg.innerText = "Successfully allocated to your wishlist vault.";
+                        toast.classList.add("show");
+                        setTimeout(() => { toast.classList.remove("show"); }, 3500);
+                    }
                 }
             })
             .catch(err => console.error("Detail page view synchronization failed:", err));
@@ -105,25 +130,73 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ========================================================
-    // BLOCK 3: WISHLIST PAGE CARD FADER REMOVER (AJAX)
+    // BLOCK 3: PRODUCT DETAIL CART SUBMISSION INTERCEPTOR
+    // ========================================================
+    const detailCartForm = document.getElementById("add-to-vault-form");
+    
+    if (detailCartForm) {
+        detailCartForm.addEventListener("submit", function(e) {
+            e.preventDefault(); 
+            e.stopImmediatePropagation();
+
+            const dataPayload = new FormData(this);
+            dataPayload.append("type", "cart"); 
+
+            fetch("/product/add-to-cart/", {
+                method: "POST",
+                body: dataPayload,
+                headers: { "X-CSRFToken": dataPayload.get("csrfmiddlewaretoken") }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Cart pipeline transmission error.");
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === "success") {
+                    const cartCounter = document.getElementById("cart-counter");
+                    if (cartCounter) {
+                        cartCounter.innerText = data.cart_count;
+                        cartCounter.classList.remove("d-none");
+                    }
+                    
+                    const toast = document.getElementById("luxury-notification");
+                    const toastMsg = document.getElementById("toast-message");
+                    if (toast && toastMsg) {
+                        toastMsg.innerText = "Added to your shopping vault.";
+                        toast.classList.add("show");
+                        setTimeout(() => { toast.classList.remove("show"); }, 3500);
+                    }
+                }
+            })
+            .catch(err => console.error("Detail cart submission failed:", err));
+        });
+    }
+
+    // ========================================================
+    // BLOCK 4: WISHLIST PAGE CARD FADER REMOVER (AJAX)
     // ========================================================
     document.addEventListener("submit", function(e) {
         const removeForm = e.target.closest(".ajax-wishlist-remove-form");
         if (!removeForm) return;
 
         e.preventDefault(); 
+        e.stopImmediatePropagation();
 
         const dataPayload = new FormData(removeForm);
         const itemCard = removeForm.closest(".wishlist-item-card");
+        const targetRemovalUrl = removeForm.getAttribute("action") || "/product/remove-item/";
 
-        fetch("/product/add-to-wishlist/", { 
+        fetch(targetRemovalUrl, { 
             method: "POST",
-            body: dataPayload
+            body: dataPayload,
+            headers: { "X-Requested-With": "XMLHttpRequest" }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error("Removal transaction rejected by server.");
+            return response.json();
+        })
         .then(data => {
             if (data.status === "success" && data.action === "removed") {
-                
                 const wishlistCounter = document.getElementById("wishlist-counter");
                 if (wishlistCounter) {
                     wishlistCounter.innerText = data.wishlist_count;
@@ -144,21 +217,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 }, 400);
             }
         })
-        .catch(err => console.error("Wishlist live removal failed:", err));
+        .catch(err => console.error("Wishlist dynamic deletion error log:", err));
     });
-
+    
     // ========================================================
-    // BLOCK 4: WISHLIST PAGE ASYNCHRONOUS CART INJECTOR (AJAX)
+    // BLOCK 5: WISHLIST PAGE ASYNCHRONOUS CART INJECTOR (AJAX)
     // ========================================================
     document.addEventListener("submit", function(e) {
         const cartForm = e.target.closest(".ajax-wishlist-add-to-cart-form");
         if (!cartForm) return;
 
         e.preventDefault(); 
+        e.stopImmediatePropagation();
 
         const dataPayload = new FormData(cartForm);
+        const targetCartUrl = cartForm.getAttribute("action") || "/product/add-to-cart/";
 
-        fetch("/product/add-to-cart/", {
+        fetch(targetCartUrl, {
             method: "POST",
             body: dataPayload
         })
@@ -171,19 +246,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 const counterElement = document.getElementById("cart-counter");
                 if (counterElement) {
                     counterElement.innerText = data.cart_count;
+                    counterElement.classList.remove("d-none");
                 }
 
-                // 🌟 VERIFIED: Core wrapper matches matching layout elements
-                const toast = document.getElementById("toast");
+                const toast = document.getElementById("luxury-notification") || document.getElementById("toast");
                 const toastMsg = document.getElementById("toast-message");
 
                 if (toast && toastMsg) {
                     toastMsg.innerText = "Added to your shopping vault.";
                     toast.classList.add("show");
-
-                    setTimeout(() => {
-                        toast.classList.remove("show");
-                    }, 3500);
+                    setTimeout(() => { toast.classList.remove("show"); }, 3500);
                 }
             }
         })
@@ -191,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     
     // ========================================================
-    // BLOCK 5: MANUAL EXTENSION LOAD-MORE ENGINE (AJAX)
+    // BLOCK 6: MANUAL EXTENSION LOAD-MORE ENGINE (AJAX)
     // ========================================================
     const sentinel = document.getElementById("scroll-sentinel");
     const productsGrid = document.getElementById("infinite-products-grid");
@@ -206,7 +278,6 @@ document.addEventListener("DOMContentLoaded", function () {
             
             if (nextPage !== "none" && !isLoading) {
                 isLoading = true;
-                
                 loadMoreBtn.classList.add("d-none");
                 if (loader) loader.classList.remove("d-none");
 
@@ -222,7 +293,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(data => {
                     if (data.html && data.html.trim().length > 0) {
                         productsGrid.insertAdjacentHTML("beforeend", data.html);
-                        
                         if (data.has_next) {
                             let calculatedNextPage = parseInt(nextPage) + 1;
                             sentinel.setAttribute("data-next-page", calculatedNextPage);
@@ -235,7 +305,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         sentinel.setAttribute("data-next-page", "none");
                         loadMoreBtn.classList.add("d-none"); 
                     }
-                    
                     isLoading = false;
                     if (loader) loader.classList.add("d-none");
                 })
@@ -250,12 +319,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }   
 
     // ========================================================
-    // BLOCK 6: INSTANT CATEGORY FILTER SWAPPER (AJAX)
+    // BLOCK 7: INSTANT CATEGORY FILTER SWAPPER (AJAX)
     // ========================================================
     document.querySelectorAll(".royal-tab-link").forEach(tab => {
         tab.addEventListener("click", function(e) {
             e.preventDefault();
-            
             document.querySelectorAll(".royal-tab-link").forEach(t => t.classList.remove("active"));
             
             if (this.classList.contains("clear-filters-btn")) {
@@ -267,7 +335,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const category = this.getAttribute("data-category");
             const newUrlParams = new URLSearchParams();
-            
             if (category !== "all") {
                 newUrlParams.set("category", category);
             }
@@ -286,7 +353,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (productsGrid) {
                     productsGrid.innerHTML = data.html;
                 }
-                
                 if (sentinel) {
                     if (data.has_next) {
                         sentinel.setAttribute("data-next-page", "2"); 
@@ -305,7 +371,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         clearFiltersWrapper.classList.remove("d-none"); 
                     }
                 }
-
                 if (loader) loader.classList.add("d-none");
             })
             .catch(err => {
@@ -316,9 +381,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ========================================================
-    // BLOCK 7: LUXURY SCROLL-TO-TOP FLOATING BUTTON
+    // BLOCK 8: LUXURY SCROLL-TO-TOP FLOATING BUTTON
     // ========================================================
-    // 🚀 INCLUDED: Safely encapsulated within DOMContentLoaded scope rules
     const backToTopBtn = document.getElementById("back-to-top-btn");
 
     if (backToTopBtn) {
@@ -335,11 +399,91 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         backToTopBtn.addEventListener("click", function() {
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
+            window.scrollTo({ top: 0, behavior: "smooth" });
         });
     }
 
-}); // 🌟 END OF SCRIPTS SCOPE
+    // ========================================================
+    // BLOCK 9: SHOPPING VAULT PAGE TABLE ROW REMOVER (AJAX)
+    // ========================================================
+    document.addEventListener("submit", function(e) {
+        const cartRemoveForm = e.target.closest(".ajax-cart-remove-form");
+        if (!cartRemoveForm) return;
+
+        e.preventDefault(); 
+        e.stopImmediatePropagation();
+
+        const dataPayload = new FormData(cartRemoveForm);
+        const tableRow = cartRemoveForm.closest("tr");
+        const targetRemovalUrl = cartRemoveForm.getAttribute("action") || "/product/remove-item/";
+
+        fetch(targetRemovalUrl, { 
+            method: "POST",
+            body: dataPayload,
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Vault subtraction transaction rejected.");
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === "success" && data.action === "removed") {
+                const cartCounter = document.getElementById("cart-counter");
+                if (cartCounter) {
+                    cartCounter.innerText = data.cart_count;
+                    if (data.cart_count === 0) {
+                        cartCounter.classList.add("d-none");
+                    }
+                }
+
+                tableRow.style.transition = "all 0.35s ease";
+                tableRow.style.opacity = "0";
+                tableRow.style.transform = "translateX(-20px)";
+                
+                setTimeout(() => {
+                    tableRow.remove();
+                    if (document.querySelectorAll("tbody tr").length === 0) {
+                        window.location.reload();
+                    }
+                }, 350);
+            }
+        })
+        .catch(err => console.error("Vault item live suppression network failure:", err));
+    });
+
+    // ========================================================
+    // 🟢 MOVED INSIDE: BLOCK 10: SHOPPING CART QUANTITY ADJUSTER (AJAX)
+    // ========================================================
+    document.addEventListener("submit", function(e) {
+        const qtyForm = e.target.closest(".ajax-cart-qty-form");
+        if (!qtyForm) return;
+
+        e.preventDefault(); 
+        e.stopImmediatePropagation();
+
+        const dataPayload = new FormData(qtyForm);
+        const targetUrl = qtyForm.getAttribute("action") || "/product/add-to-cart/";
+
+        fetch(targetUrl, {
+            method: "POST",
+            body: dataPayload,
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Quantity recalculation rejected.");
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === "success") {
+                const cartCounter = document.getElementById("cart-counter");
+                if (cartCounter) {
+                    cartCounter.innerText = data.cart_count;
+                    if (data.cart_count === 0) cartCounter.classList.add("d-none");
+                }
+                window.location.reload();
+            }
+        })
+        .catch(err => console.error("Quantity modifier execution failed:", err));
+    });
+
+}); // 🔒 Safe bracket termination closure

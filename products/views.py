@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
-from .models import Product, ProductVariant
-from django.views.decorators.http import require_POST
+from .models import Product, ProductVariant, CartItem
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.views.generic import View
+from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 
 # Create your views here.
@@ -19,19 +19,16 @@ class ProductListView(ListView):
     def get_queryset(self):
         queryset = Product.objects.all().order_by("-created_at")
 
-        # 1. Exact Category Filter Toggle
         category_slug = self.request.GET.get("category")
         if category_slug and category_slug != "all":
             queryset = queryset.filter(category__iexact=category_slug.strip())
 
-        # 2. Broad Search Bar Logic
         search_query = self.request.GET.get("q")
         if search_query:
             query_text = search_query.strip()
             queryset = queryset.filter(
                 Q(name__icontains=query_text) | Q(category__icontains=query_text)
             )
-
         return queryset
 
     def render_to_response(self, context, **response_kwargs):
@@ -67,138 +64,135 @@ class ProductDetailView(DetailView):
     context_object_name = "product"
 
 
+@login_required
+def CartView(request, type):
+
+    context = {}
+
+    if type == "cart":
+        context["cart_items"] = CartItem.objects.filter(
+            user=request.user, status="cart"
+        ).select_related("product", "productvariant")
+        template = "products/cart.html"
+
+    else:
+        wishlist_items = CartItem.objects.filter(
+            user=request.user, status="wishlist"
+        ).select_related("product", "productvariant")
+
+        for item in wishlist_items:
+            if item.quantity != 1:
+                item.quantity = 1
+                item.save(update_fields=["quantity"])
+
+        context["cart_items"] = wishlist_items
+        template = "products/wishlist.html"
+    return render(request, template, context)
+
+
 @require_POST
-def AddToCart(request):
+@login_required
+def AddTo(request, type):
+    product_id = request.POST.get("product_id")
     variant_id = request.POST.get("variant_id")
-    quantity = int(request.POST.get("quantity", 1))
+    override_action = request.POST.get("override_action")
 
-    cart = request.session.get("cart", {})
-    variant_id = str(variant_id)
+    try:
+        quantity = int(request.POST.get("quantity", 1))
+    except (ValueError, TypeError):
+        quantity = 1
 
-    if variant_id in cart:
-        cart[variant_id] += quantity
+    if type == "wishlist":
+        quantity = 1
+
+    existing_item = CartItem.objects.filter(
+        user=request.user,
+        product_id=product_id,
+        productvariant_id=variant_id,
+        status=type,
+    ).first()
+
+    if existing_item:
+        if type == "cart":
+
+            if override_action == "increment":
+                existing_item.quantity += quantity
+            else:
+
+                existing_item.quantity = quantity
+
+            if existing_item.quantity <= 0:
+                existing_item.delete()
+            else:
+                existing_item.save()
+
+        elif type == "wishlist":
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "action": "exists",
+                    "wishlist_count": request.user.cart_items.filter(
+                        status="wishlist"
+                    ).count(),
+                    "message": "Item already preserved in wishlist.",
+                }
+            )
     else:
-        cart[variant_id] = quantity
 
-    request.session["cart"] = cart
-    request.session.modified = True
+        if quantity > 0:
+            CartItem.objects.create(
+                user=request.user,
+                product_id=product_id,
+                productvariant_id=variant_id,
+                status=type,
+                quantity=quantity,
+            )
 
-    return JsonResponse({"status": "success", "cart_count": sum(cart.values())})
-
-
-class CartView(View):
-    template_name = "products/cart.html"
-
-    def get(self, request, *args, **kwargs):
-        cart = request.session.get("cart", {})
-        cart_items = []
-        grand_total = 0
-
-        for variant_id, quantity in cart.items():
-            try:
-                variant = ProductVariant.objects.select_related("product").get(
-                    id=variant_id
-                )
-                item_total = variant.price * quantity
-                grand_total += item_total
-
-                cart_items.append(
-                    {"variant": variant, "quantity": quantity, "item_total": item_total}
-                )
-            except ProductVariant.DoesNotExist:
-                continue
-
-        context = {
-            "cart_items": cart_items,
-            "grand_total": grand_total,
-        }
-        return render(request, "products/cart.html", context)
-
-    def post(self, request, *args, **kwargs):
-        action = request.POST.get("action")
-        variant_id = request.POST.get("variant_id")
-        cart = request.session.get("cart", {})
-
-        if variant_id in cart:
-            if action == "remove":
-                cart.pop(variant_id, None)
-
-            elif action == "update_quantity":
-                try:
-                    new_quantity = int(request.POST.get("quantity", 1))
-                    if new_quantity > 0:
-                        cart[variant_id] = new_quantity
-                    else:
-                        cart.pop(variant_id, None)
-                except ValueError:
-                    pass
-
-        request.session["cart"] = cart
-        request.session.modified = True
-
-        return redirect("product-cart")
-
-
-@require_POST
-def AddToWishList(request):
-
-    variant_id = str(request.POST.get("variant_id"))
-
-    raw_wishlist = request.session.get("wishlist", [])
-    wishlist = [str(item) for item in raw_wishlist]
-
-    if variant_id in wishlist:
-        wishlist.remove(variant_id)
-        action_performed = "removed"
-    else:
-        wishlist.append(variant_id)
-        action_performed = "added"
-
-    request.session["wishlist"] = wishlist
-    request.session.modified = True
+    # Recalculate totals for the navbar
+    total_cart_count = sum(
+        item.quantity for item in request.user.cart_items.filter(status="cart")
+    )
+    total_wishlist_count = request.user.cart_items.filter(status="wishlist").count()
 
     return JsonResponse(
         {
             "status": "success",
-            "action": action_performed,
-            "wishlist_count": len(wishlist),
+            "action": "added",
+            "cart_count": total_cart_count,
+            "wishlist_count": total_wishlist_count,
+            "message": f"Successfully allocated to your {type} vault.",
         }
     )
 
 
-class WishListView(View):
-    template_name = "products/wishlist.html"
+@login_required
+@require_POST
+def RemoveFrom(request):
+    item_id = request.POST.get("item_id")
 
-    def get(self, request, *args, **kwargs):
-        wishlist = request.session.get("wishlist", [])
-        wishlist_items = []
+    try:
 
-        for variant_id in wishlist:
-            try:
-                variant = ProductVariant.objects.select_related("product").get(
-                    id=variant_id
-                )
-                wishlist_items.append({"variant": variant})
-            except ProductVariant.DoesNotExist:
-                continue
+        item_to_delete = CartItem.objects.get(id=item_id, user=request.user)
+        item_to_delete.delete()
 
-        context = {"wishlist_items": wishlist_items}
-        return render(request, "products/wishlist.html", context)
+        total_cart_count = sum(
+            item.quantity for item in request.user.cart_items.filter(status="cart")
+        )
+        total_wishlist_count = request.user.cart_items.filter(status="wishlist").count()
 
-    def post(self, request, *args, **kwargs):
+        return JsonResponse(
+            {
+                "status": "success",
+                "action": "removed",
+                "cart_count": total_cart_count,
+                "wishlist_count": total_wishlist_count,
+                "message": "Item successfully removed from your vault.",
+            }
+        )
 
-        action = request.POST.get("action")
-        variant_id = str(request.POST.get("variant_id"))
-
-        raw_wishlist = request.session.get("wishlist", [])
-        wishlist = [str(item) for item in raw_wishlist]
-
-        if variant_id in wishlist:
-
-            if action in ["remove", "removed"]:
-                wishlist.remove(variant_id)
-
-        request.session["wishlist"] = wishlist
-        request.session.modified = True
-
-        return redirect("product-wishlist")
+    except CartItem.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Item not found in vault."}, status=404
+        )
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)

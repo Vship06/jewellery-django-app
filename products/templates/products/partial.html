@@ -47,13 +47,15 @@
                         REF: {{ product.sku }}
                     </p>
                     
-                    <form class="wishlist-toggle-form m-0" data-product-id="{{ product.id }}">
+                    <form class="wishlist-toggle-form m-0" action="{% url 'product-add-wishlist' %}" method="POST">
                         {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
                         <input type="hidden" name="variant_id" value="{{ product.variants.first.id }}">
+                        <input type="hidden" name="type" value="wishlist">
                         
                         <button type="submit" class="btn p-2 wishlist-heart-btn" aria-label="Toggle Wishlist Layout">
-                            {% if product.variants.first.id|stringformat:"s" in wishlist %}
-                                <i class="bi bi-heart-fill text-burgundy" style="color: #800020; font-size: 1.2rem;"></i>
+                            {% if product.id in user_wishlist_ids %}
+                                <i class="bi bi-heart-fill" style="color: #800020; font-size: 1.2rem;"></i>
                             {% else %}
                                 <i class="bi bi-heart text-muted" style="font-size: 1.2rem;"></i>
                             {% endif %}

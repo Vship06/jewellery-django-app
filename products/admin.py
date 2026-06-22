@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, ProductVariant
+from .models import Product, ProductVariant, CartItem
 
 # Register your models here.
 
@@ -16,3 +16,6 @@ class ProductAdmin(admin.ModelAdmin):
 class ProductVariantAdmin(admin.ModelAdmin):
     list_display = ("variant_sku", "product", "price", "stock_count")
     search_fields = ("variant_sku", "product__name")
+
+
+admin.site.register(CartItem)

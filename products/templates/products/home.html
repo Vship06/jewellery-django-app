@@ -13,7 +13,7 @@
         Discover hand-crafted pieces.
     </p>
     <div class="position-relative mx-auto mt-4" style="max-width: fit-content;">
-        <div class="d-flex justify-content-center align-items-center gap-4 royal-tab-container">
+        <div class="d-flex justify-content-center align-items-center gap-4 royal-tab-container flex-wrap">
             
             <a href="javascript:void(0);" class="royal-tab-link {% if not selected_categories %}active{% endif %}" data-category="all">
                 All Collections
@@ -24,16 +24,12 @@
                     {{ category }}
                 </a>
             {% endfor %}
+        </div>
 
-            {% if selected_categories or request.GET.q %}
-                <div class="text-center mt-4 animate-fade-in">
-                    <div id="clear-filters-wrapper" class="text-center mt-3 {% if not selected_categories and not request.GET.q %}d-none{% endif %}">
-                    <a href="javascript:void(0);" class="clear-filters-btn royal-tab-link" data-category="all">
-                        <i class="bi bi-x-circle me-1"></i> Clear Filters
-                    </a>
-                </div>
-                </div>
-            {% endif %}
+        <div id="clear-filters-wrapper" class="text-center mt-3 {% if not selected_categories and not request.GET.q %}d-none{% endif %}">
+            <a href="javascript:void(0);" class="clear-filters-btn royal-tab-link" data-category="all" style="font-size: 0.8rem;">
+                <i class="bi bi-x-circle me-1"></i> Clear Filters
+            </a>
         </div>
     </div>
 </div>
@@ -64,7 +60,14 @@
                 
                 // Synchronize visual state classes instantly across all navigation elements
                 document.querySelectorAll(".royal-tab-link").forEach(t => t.classList.remove("active"));
-                this.classList.add("active");
+                
+                // If clicking the clear filter element, enforce visual active reset to the main 'All' option tab
+                if (this.classList.contains("clear-filters-btn")) {
+                    const allTab = document.querySelector('.royal-tab-link[data-category="all"]');
+                    if (allTab) allTab.classList.add("active");
+                } else {
+                    this.classList.add("active");
+                }
 
                 const category = this.getAttribute("data-category");
                 const newUrlParams = new URLSearchParams();
@@ -88,6 +91,7 @@
                 const sentinel = document.getElementById("scroll-sentinel");
                 const loader = document.getElementById("infinite-loader");
                 const loadMoreBtn = document.getElementById("load-more-btn");
+                const clearFiltersWrapper = document.getElementById("clear-filters-wrapper");
 
                 if (loader) loader.classList.remove("d-none");
                 if (loadMoreBtn) loadMoreBtn.classList.add("d-none");
@@ -97,7 +101,7 @@
                 })
                 .then(response => {
                     if (!response.ok) throw new Error("Catalog filtration network error.");
-                    return response.json(); // 🌟 Updated to accurately parse JSON structures!
+                    return response.json(); 
                 })
                 .then(data => {
                     // Update grid elements seamlessly with no viewport flicker
@@ -115,6 +119,16 @@
                             if (loadMoreBtn) loadMoreBtn.classList.add("d-none");
                         }
                     }
+
+                    // ✅ DYNAMIC LAYOUT CONTROL: Adjust clear link visibility criteria dynamically in browser memory
+                    if (clearFiltersWrapper) {
+                        if (category === "all" && !currentSearchQuery) {
+                            clearFiltersWrapper.classList.add("d-none");
+                        } else {
+                            clearFiltersWrapper.classList.remove("d-none");
+                        }
+                    }
+
                     if (loader) loader.classList.add("d-none");
                 })
                 .catch(err => {
