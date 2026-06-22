@@ -10,36 +10,35 @@
         </a>
     </div>
 
-    <div class="row g-5">
+    <div class="row g-5 {% if not product.image_link %}justify-content-center{% endif %}">
+        
+        {% if product.image_link %}
         <div class="col-lg-6 animate-fade-in">
             <div class="luxury-image-wrapper text-center p-4">
-                {% if product.image_link %}
-                    {% with img_list=product.image_link|split_images %}
-                        <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="img-fluid luxury-product-img mb-3" id="main-product-image">
-                        
-                        {% if img_list|length > 1 %}
-                            <div class="row g-2 justify-content-center mt-2" id="product-thumb-gallery">
-                                {% for img_url in img_list %}
-                                    <div class="col-2 col-md-2">
-                                        <div class="thumb-frame border p-1" style="cursor: pointer; overflow: hidden; max-height: 80px; transition: border-color 0.3s ease;">
-                                            <img src="{{ img_url }}" alt="{{ product.name }} View {{ forloop.counter }}" class="img-fluid gallery-thumb-item" onclick="swapLuxuryStageImage(this)">
-                                        </div>
+                {% with img_list=product.image_link|split_images %}
+                    <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="img-fluid luxury-product-img mb-3" id="main-product-image" style="transition: opacity 0.2s ease-in-out; max-height: 500px; object-fit: contain;">
+                    
+                    {% if img_list|length > 1 %}
+                        <div class="row g-2 justify-content-center mt-2" id="product-thumb-gallery">
+                            {% for img_url in img_list %}
+                                <div class="col-2 col-md-2">
+                                    <div class="thumb-frame border p-1 {% if forloop.first %}border-dark{% endif %}" style="cursor: pointer; overflow: hidden; max-height: 80px; transition: border-color 0.3s ease;">
+                                        <img src="{{ img_url }}" alt="{{ product.name }} View {{ forloop.counter }}" class="img-fluid gallery-thumb-item" onclick="swapLuxuryStageImage(this)">
                                     </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    {% endwith %}
-                {% else %}
-                    <img src="{% static 'images/placeholder-jewelry.jpg' %}" alt="Aurora Jewelry Piece" class="img-fluid luxury-product-img" id="main-product-image">
-                {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
             </div>
         </div>
+        {% endif %}
 
-        <div class="col-lg-6 animate-fade-in">
-            <div class="product-specification-panel ps-lg-4">
+        <div class="{% if product.image_link %}col-lg-6{% else %}col-lg-8{% endif %} animate-fade-in">
+            <div class="product-specification-panel {% if product.image_link %}ps-lg-4{% endif %}">
                 
-                <span class="text-uppercase tracking-widest text-muted small d-block mb-2">{{ product.category }}</span>
-                <h1 class="font-serif luxury-detail-title mb-1">{{ product.name }}</h1>
+                <span class="text-uppercase tracking-widest text-muted d-block mb-2" style="font-size: 0.75rem; letter-spacing: 2px;">{{ product.get_category_display }}</span>
+                <h1 class="font-serif luxury-detail-title mb-1" style="font-size: 2.5rem; color: var(--text-dark);">{{ product.name }}</h1>
 
                 <div class="luxury-description mt-3 mb-4">
                     <p class="font-serif italic text-dark-neutral" style="font-size: 1.05rem; line-height: 1.6; color: #4a4a4a;">
@@ -47,54 +46,60 @@
                     </p>
                 </div>
                 
-                <div class="luxury-price-display mb-4">
+                <div class="luxury-price-display mb-2">
                     <h3 class="font-serif color-burgundy" id="dynamic-main-price" style="font-size: 1.8rem; font-weight: 600; color: #800020;">
                         {% if product.variants.exists %}
                            Rs. {{ product.variants.first.price|floatformat:2 }}
+                        {% else %}
+                           Rs. 0.00
                         {% endif %}
                     </h3>
                 </div>
 
-                <hr class="luxury-divider mb-4">
+                <div class="mb-4">
+                    <a href="javascript:void(0);" onclick="toggleLuxuryMatrix(true)" class="text-uppercase tracking-widest small font-serif text-decoration-none" style="color: var(--royal-gold); font-size: 0.75rem; font-weight: 600; letter-spacing: 2px;">
+                        <i class="bi bi-grid-3x3-gap me-1"></i> View Full Arrangement Matrix & Specs →
+                    </a>
+                </div>
+
+                <hr class="luxury-divider mb-4" style="border-color: var(--border-color); opacity: 1;">
 
                 <form id="add-to-vault-form">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" id="variant-selector" name="variant_id" value="{{ product.variants.first.id }}">
                     
-                    <div class="row g-3 mb-4">
+                    <div class="row g-3 mb-4 align-items-center">
                         <div class="col-8 col-md-9">
-                            <label for="variant-selector" class="text-uppercase tracking-widest small text-muted d-block mb-2" style="font-size: 0.7rem; font-weight: 600;">
-                                Select Configuration
-                            </label>
-                            <select id="variant-selector" name="variant_id" class="form-select rounded-0 py-2" style="border-color: #dddddd; font-size: 0.9rem;">
-                                {% for variant in product.variants.all %}
-                                    <option value="{{ variant.id }}" data-price="{{ variant.price }}">
-                                        {{ variant.metal_type }} {% if variant.size_or_length %}({{ variant.size_or_length }}){% endif %} 
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            <span class="text-uppercase tracking-widest small text-muted d-block mb-1" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">Selected Configuration:</span>
+                            <span id="active-variant-label" class="font-serif text-dark small d-block fw-bold" style="letter-spacing: 0.5px;">
+                                {% if product.variants.first.size_or_length %}
+                                    {% if product.category == "RING" or product.category == "BANGLE" or product.category == "BRACELET" %}
+                                        Size {{ product.variants.first.size_or_length }}
+                                    {% elif product.category == "NECKLACE" or product.category == "CHAIN" %}
+                                        {{ product.variants.first.size_or_length }} Inches
+                                    {% else %}
+                                        Standard Sizing {{ product.variants.first.size_or_length }}
+                                    {% endif %}
+                                {% else %}
+                                    Signature Arrangement
+                                {% endif %}
+                            </span>
                         </div>
 
                         <div class="col-4 col-md-3">
-                            <label for="quantity-input" class="text-uppercase tracking-widest small text-muted d-block mb-2" style="font-size: 0.7rem; font-weight: 600;">
+                            <label for="quantity-input" class="text-uppercase tracking-widest small text-muted d-block mb-2" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 1px;">
                                 Quantity
                             </label>
-                            <input type="number" 
-                                id="quantity-input" 
-                                name="quantity" 
-                                value="1" 
-                                min="1" 
-                                max="10" 
-                                class="form-control rounded-0 py-2 text-center text-dark font-serif" 
-                                style="border-color: #dddddd; font-size: 0.9rem;">
+                            <input type="number" id="quantity-input" name="quantity" value="1" min="1" max="10" class="form-control rounded-0 py-2 text-center text-dark font-serif shadow-none" style="border-color: #dddddd; font-size: 0.9rem;">
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest py-3" style="font-size: 0.85rem; letter-spacing: 0.15em; background-color: #111111;">
+                    <button type="submit" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest py-3 mb-2" style="font-size: 0.85rem; letter-spacing: 0.15em; background-color: #111111;" {% if not product.variants.exists %}disabled{% endif %}>
                         Add to Shopping Vault
                     </button>
                     
-                    <button type="button" id="detail-wishlist-toggle-btn" class="btn btn-outline-dark rounded-0 px-4 py-3 text-uppercase tracking-widest mt-2 w-100" style="font-size: 0.85rem; letter-spacing: 0.15em;">
+                    <button type="button" id="detail-wishlist-toggle-btn" class="btn btn-outline-dark rounded-0 px-4 py-3 text-uppercase tracking-widest w-100" style="font-size: 0.85rem; letter-spacing: 0.15em;">
                         {% if product.id in user_wishlist_ids %}
                             <i class="bi bi-heart-fill me-2" id="detail-heart-icon" style="color: #800020;"></i> 
                             <span id="detail-wishlist-text">In Your Wishlist</span>
@@ -105,10 +110,161 @@
                     </button>
                 </form>
 
+                {% if product.variants.exists %}
+                    <div class="luxury-spec-box p-4 border mt-4 bg-white rounded-0" style="border-color: #eae1d3 !important;">
+                        <h5 class="font-serif text-uppercase tracking-wider mb-3" style="font-size: 1rem; color: #111111; letter-spacing: 1px;">Product Specifications</h5>
+                        
+                        <div class="row g-3 align-items-center" id="main-spec-grid">
+                            <div class="col-5 text-uppercase tracking-widest text-muted small" style="font-size: 0.65rem; letter-spacing: 1.5px;">Gross Weight:</div>
+                            <div class="col-7 font-serif text-dark small text-sm-start" id="spec-gross" style="word-break: break-word; line-height: 1.4;">
+                                {{ product.variants.first.gross_weight|default:"—" }}
+                            </div>
+
+                            <div class="col-12 my-1"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+
+                            <div class="col-5 text-uppercase tracking-widest text-muted small" style="font-size: 0.65rem; letter-spacing: 1.5px;">Metal Properties:</div>
+                            <div class="col-7 font-serif text-dark small text-sm-start" id="spec-metal" style="word-break: break-word; line-height: 1.4;">
+                                {{ product.variants.first.metal_type|default:"Precious Metal Blend" }}
+                            </div>
+
+                            {% if product.variants.first.carat_weight and product.variants.first.carat_weight != "None" and product.variants.first.carat_weight != "Null" %}
+                                <div id="diamond-spec-group" class="col-12 p-0 m-0">
+                                    <div class="row g-3 align-items-center m-0 w-100">
+                                        <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                                        
+                                        <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Weight:</div>
+                                        <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-carat" style="word-break: break-word; line-height: 1.4;">
+                                            {{ product.variants.first.carat_weight|default:"—" }}
+                                        </div>
+                                        
+                                        <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                                        
+                                        <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Clarity:</div>
+                                        <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-clarity" style="word-break: break-word; line-height: 1.4;">
+                                            {{ product.variants.first.diamond_clarity|default:"—" }}
+                                        </div>
+                                        
+                                        <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                                        
+                                        <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Color:</div>
+                                        <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-color" style="word-break: break-word; line-height: 1.4;">
+                                            {{ product.variants.first.diamond_color|default:"—" }}
+                                        </div>
+
+                                        <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+
+                                        <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Total Diamonds:</div>
+                                        <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-pcs" style="word-break: break-word; line-height: 1.4;">
+                                            {% if product.variants.first.diamond_pcs %}{{ product.variants.first.diamond_pcs }} Pcs{% else %}—{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div id="diamond-spec-group" class="col-12 p-0 m-0" style="display: none;"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
             </div>
         </div>
     </div>
 </div>
+
+{% if product.variants.exists %}
+<div id="luxury-matrix-overlay" class="luxury-matrix-panel" style="display:none;" onclick="toggleLuxuryMatrix(false)">
+    <div class="matrix-content-wrapper p-4 p-md-5" onclick="event.stopPropagation()">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="font-serif text-uppercase tracking-wider m-0" style="color: #3b141c; font-size: 1.3rem;">Arrangement Specifications Matrix</h4>
+            <button type="button" onclick="toggleLuxuryMatrix(false)" class="matrix-close-btn" aria-label="Close" style="background: transparent; border: none; font-size: 1.5rem; color: #7a7a7a; cursor: pointer;"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <p class="text-muted small tracking-wide mb-4">Compare configuration parameters, pricing structures, and item hallmarks across your curated choices below.</p>
+        
+        <div class="table-responsive">
+            <table class="table align-middle matrix-table font-serif">
+                <thead class="text-uppercase tracking-widest" style="font-size: 0.65rem; background-color: #fcfbf9;">
+                    <tr>
+                        <th scope="col" class="py-3 px-3 border-bottom-0">Arrangement</th>
+                        <th scope="col" class="py-3 border-bottom-0">Metal Properties</th>
+                        <th scope="col" class="py-3 border-bottom-0">Gross Weight</th>
+                        
+                        {% if product.variants.first.carat_weight %}
+                            <th scope="col" class="py-3 border-bottom-0">Diamond Weight</th>
+                            <th scope="col" class="py-3 border-bottom-0">Clarity/Color</th>
+                            <th scope="col" class="py-3 border-bottom-0">Total Pcs</th>
+                        {% endif %}
+                        
+                        <th scope="col" class="py-3 text-end border-bottom-0">Price</th>
+                        <th scope="col" class="py-3 text-center border-bottom-0">Action</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 0.85rem;">
+                    {% for var in product.variants.all %}
+                    <tr id="matrix-row-{{ var.id }}" class="{% if forloop.first %}table-active-selection{% endif %}">
+                        <td class="py-3 px-3 fw-bold text-dark">
+                            {% if var.size_or_length %}
+                                {% if product.category == "RING" or product.category == "BANGLE" or product.category == "BRACELET" %}
+                                    Size {{ var.size_or_length }}
+                                {% elif product.category == "NECKLACE" or product.category == "CHAIN" %}
+                                    {{ var.size_or_length }} Inches
+                                {% else %}
+                                    Sizing {{ var.size_or_length }}
+                                {% endif %}
+                            {% else %}
+                                Signature Layout Tier {{ forloop.counter }}
+                            {% endif %}
+                        </td>
+                        <td class="py-3 text-muted">{{ var.metal_type|default:"—" }}</td>
+                        <td class="py-3 font-serif fw-bold text-dark">{{ var.gross_weight|default:"—" }}</td>
+                        
+                        {% if product.variants.first.carat_weight %}
+                            <td class="py-3 text-muted" style="max-width: 180px; word-break: break-word;">{{ var.carat_weight|default:"—" }}</td>
+                            <td class="py-3">{{ var.diamond_clarity|default:"--" }} / {{ var.diamond_color|default:"--" }}</td>
+                            <td class="py-3 text-muted">{% if var.diamond_pcs %}{{ var.diamond_pcs }} Pcs{% else %}—{% endif %}</td>
+                        {% endif %}
+                        
+                        <td class="py-3 text-end fw-bold text-dark">Rs. {{ var.price|floatformat:2 }}</td>
+                        <td class="py-3 text-center">
+                            {% if var.size_or_length %}
+                                {% if product.category == "RING" or product.category == "BANGLE" or product.category == "BRACELET" %}
+                                    {% with "Size "|add:var.size_or_length as js_descriptor %}
+                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest" style="font-size: 0.65rem;"
+                                                onclick="selectVariantFromMatrix('{{ var.id }}', '{{ var.price }}', '{{ js_descriptor }}', '{{ var.carat_weight }}', '{{ var.diamond_clarity }}', '{{ var.diamond_color }}', '{{ var.diamond_pcs }}', '{{ var.gross_weight }}', '{{ var.metal_type }}')">
+                                            Select
+                                        </button>
+                                    {% endwith %}
+                                {% elif product.category == "NECKLACE" or product.category == "CHAIN" %}
+                                    {% with var.size_or_length|add:" Inches" as js_descriptor %}
+                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest" style="font-size: 0.65rem;"
+                                                onclick="selectVariantFromMatrix('{{ var.id }}', '{{ var.price }}', '{{ js_descriptor }}', '{{ var.carat_weight }}', '{{ var.diamond_clarity }}', '{{ var.diamond_color }}', '{{ var.diamond_pcs }}', '{{ var.gross_weight }}', '{{ var.metal_type }}')">
+                                            Select
+                                        </button>
+                                    {% endwith %}
+                                {% else %}
+                                    {% with "Size "|add:var.size_or_length as js_descriptor %}
+                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest" style="font-size: 0.65rem;"
+                                                onclick="selectVariantFromMatrix('{{ var.id }}', '{{ var.price }}', '{{ js_descriptor }}', '{{ var.carat_weight }}', '{{ var.diamond_clarity }}', '{{ var.diamond_color }}', '{{ var.diamond_pcs }}', '{{ var.gross_weight }}', '{{ var.metal_type }}')">
+                                            Select
+                                        </button>
+                                    {% endwith %}
+                                {% endif %}
+                            {% else %}
+                                {% with "Signature Layout Tier "|add:forloop.counter as js_descriptor %}
+                                    <button type="button" class="btn btn-sm btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest" style="font-size: 0.65rem;"
+                                            onclick="selectVariantFromMatrix('{{ var.id }}', '{{ var.price }}', '{{ js_descriptor }}', '{{ var.carat_weight }}', '{{ var.diamond_clarity }}', '{{ var.diamond_color }}', '{{ var.diamond_pcs }}', '{{ var.gross_weight }}', '{{ var.metal_type }}')">
+                                        Select
+                                    </button>
+                                {% endwith %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <div id="luxury-notification" class="luxury-toast d-flex align-items-center gap-3">
     <i class="bi bi-shield-check"></i>
@@ -123,16 +279,15 @@
         const stageImage = document.getElementById("main-product-image");
         if (stageImage && element) {
             stageImage.style.opacity = 0.3;
-            
             setTimeout(() => {
                 stageImage.src = element.src;
                 stageImage.style.opacity = 1;
             }, 150);
             
             document.querySelectorAll('#product-thumb-gallery .thumb-frame').forEach(el => {
-                el.style.borderColor = "#dee2e6";
+                el.classList.remove('border-dark');
             });
-            element.closest('.thumb-frame').style.borderColor = "#111111";
+            element.closest('.thumb-frame').classList.add('border-dark');
         }
     }
 
@@ -144,7 +299,7 @@
             currentImageIndex = (currentImageIndex + 1) % thumbItems.length;
             const nextThumb = thumbItems[currentImageIndex];
             swapLuxuryStageImage(nextThumb);
-        }, 4000); 
+        }, 5000); 
     }
 
     function stopImageAutoScroll() {
@@ -153,32 +308,75 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const variantSelector = document.getElementById('variant-selector');
-        const priceDisplay = document.getElementById('dynamic-main-price');
-        const stageImgElement = document.getElementById("main-product-image");
-
-        if (stageImgElement) {
-            stageImgElement.style.transition = "opacity 0.2s ease-in-out";
+    function toggleLuxuryMatrix(show) {
+        const matrixOverlay = document.getElementById('luxury-matrix-overlay');
+        if (matrixOverlay) {
+            if (show) {
+                matrixOverlay.style.display = 'flex';
+                setTimeout(() => matrixOverlay.classList.add('show'), 10);
+                document.body.style.overflow = 'hidden';
+            } else {
+                matrixOverlay.classList.remove('show');
+                setTimeout(() => matrixOverlay.style.display = 'none', 300);
+                document.body.style.overflow = 'auto';
+            }
         }
+    }
 
+    function selectVariantFromMatrix(id, price, descriptor, carat, clarity, color, pcs, grossWeight, metalType) {
+        document.getElementById('variant-selector').value = id;
+        document.getElementById('active-variant-label').innerText = descriptor;
+        document.getElementById('dynamic-main-price').innerText = "Rs. " + parseFloat(price).toFixed(2);
+        
+        if (document.getElementById('spec-gross')) document.getElementById('spec-gross').innerText = grossWeight || '—';
+        if (document.getElementById('spec-metal')) document.getElementById('spec-metal').innerText = metalType || '—';
+        
+        const diamondContainer = document.getElementById('diamond-spec-group');
+        if (diamondContainer) {
+            if (carat && carat !== '' && carat !== 'None' && carat !== 'Null') {
+                diamondContainer.style.display = 'block';
+                
+                if (!document.getElementById('spec-carat')) {
+                    diamondContainer.innerHTML = `
+                        <div class="row g-3 align-items-center m-0 w-100">
+                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                            <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Weight:</div>
+                            <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-carat" style="word-break: break-word; line-height: 1.4;"></div>
+                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                            <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Clarity:</div>
+                            <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-clarity" style="word-break: break-word; line-height: 1.4;"></div>
+                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                            <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Color:</div>
+                            <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-color" style="word-break: break-word; line-height: 1.4;"></div>
+                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                            <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Total Diamonds:</div>
+                            <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-pcs" style="word-break: break-word; line-height: 1.4;"></div>
+                        </div>`;
+                }
+
+                if (document.getElementById('spec-carat')) document.getElementById('spec-carat').innerText = carat;
+                if (document.getElementById('spec-clarity')) document.getElementById('spec-clarity').innerText = clarity || '—';
+                if (document.getElementById('spec-color')) document.getElementById('spec-color').innerText = color || '—';
+                if (document.getElementById('spec-pcs')) document.getElementById('spec-pcs').innerText = pcs ? pcs + ' Pcs' : '—';
+            } else {
+                diamondContainer.style.display = 'none';
+            }
+        }
+        
+        document.querySelectorAll('.matrix-table tr').forEach(row => row.classList.remove('table-active-selection'));
+        const activeRow = document.getElementById(`matrix-row-${id}`);
+        if (activeRow) activeRow.classList.add('table-active-selection');
+        
+        toggleLuxuryMatrix(false);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
         startImageAutoScroll();
 
         const galleryContainer = document.getElementById("product-thumb-gallery");
         if (galleryContainer) {
             galleryContainer.addEventListener("mouseenter", stopImageAutoScroll);
             galleryContainer.addEventListener("mouseleave", startImageAutoScroll);
-        }
-        
-        // Dynamic Live Price Text Calculator Switcher
-        if (variantSelector && priceDisplay) {
-            variantSelector.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const newPrice = selectedOption.getAttribute('data-price');
-                if (newPrice) {
-                    priceDisplay.innerText = "Rs. " + parseFloat(newPrice).toFixed(2);
-                }
-            });
         }
     });
 </script>
