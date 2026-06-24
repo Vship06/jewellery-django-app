@@ -3,17 +3,17 @@
 {% load custom_filter %} 
 
 {% block content %}
-<div class="container pt-4 pb-5">
-    <div class="mb-4 animate-fade-in">
+<div class="container pt-2 pb-5">
+    <div class="mb-2 animate-fade-in">
         <a href="/" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
             ← Continue Browsing Collection
         </a>
     </div>
 
-    <h1 class="font-serif text-uppercase tracking-wider mb-5" style="font-size: 2rem; color: #111111;">Your Shopping Vault</h1>
+    <h1 class="font-serif text-uppercase tracking-wider mb-3" style="font-size: 2rem; color: #111111;">Your Shopping Vault</h1>
 
     {% if cart_items %}
-        <div class="row g-5">
+        <div class="row g-4">
             <div class="col-lg-8 animate-fade-in">
                 <div class="table-responsive">
                     <table class="table align-middle border-bottom">
@@ -27,7 +27,7 @@
                         <tbody>
                             {% for item in cart_items %}
                                 <tr data-item-id="{{ item.id }}">
-                                    <td class="ps-0 py-4" style="min-width: 300px;">
+                                    <td class="ps-0 py-3" style="min-width: 300px;">
                                         <div class="d-flex align-items-center">
                                             
                                             <div class="product-image-frame border bg-white d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; min-width: 60px; padding: 4px;">
@@ -62,7 +62,7 @@
                                         </div>
                                     </td>
                                     
-                                   <td class="text-center py-4">
+                                   <td class="text-center py-3">
                                         <div class="d-inline-flex align-items-center border px-2 py-1 bg-white">
                                             
                                             <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-cart-qty-form m-0 p-0">
@@ -87,7 +87,7 @@
                                         </div>
                                     </td>
 
-                                    <td class="text-end pe-0 py-4 font-serif text-dark font-semibold item-total-price" style="font-size: 1.1rem;">
+                                    <td class="text-end pe-0 py-3 font-serif text-dark font-semibold item-total-price" style="font-size: 1rem;">
                                         Rs. {{ item.quantity|multiply:item.productvariant.price|floatformat:2 }}
                                     </td>
                                 </tr>
@@ -98,39 +98,75 @@
             </div>
 
             <div class="col-lg-4 animate-fade-in">
-                <div class="p-4 border bg-light-neutral rounded-0" style="background-color: #faf9f6;">
-                    <h3 class="font-serif text-uppercase tracking-wider mb-4" style="font-size: 1.25rem; color: #111111;">Vault Summary</h3>
-                    
-                    <div class="d-flex justify-content-between mb-3 text-uppercase tracking-widest small text-muted" style="font-size: 0.75rem;">
-                        <span>Subtotal</span>
-                        <span class="font-serif text-dark" id="cart-grand-total">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-3 text-uppercase tracking-widest small text-muted" style="font-size: 0.75rem;">
-                        <span>Secured Shipping Allocation</span>
-                        <span class="text-success" style="font-size: 0.7rem; font-weight: 600;">Complimentary</span>
+                <div class="vault-summary-card p-4 border rounded-0" style="background: linear-gradient(135deg, #faf9f6 0%, #f5f2ed 100%); border-color: rgba(212, 175, 55, 0.25);">
+                    <!-- Header with Icon -->
+                    <div class="d-flex align-items-center justify-content-between mb-4 pb-3" style="border-bottom: 1px solid rgba(212, 175, 55, 0.15);">
+                        <div>
+                            <h3 class="font-serif text-uppercase tracking-wider mb-0" style="font-size: 1.15rem; color: #111111; letter-spacing: 1.5px;">Vault Summary</h3>
+                            <p class="text-muted small mb-0" style="font-size: 0.65rem; margin-top: 2px;">Order Details</p>
+                        </div>
+                        <i class="bi bi-shield-lock" style="font-size: 1.8rem; color: rgba(212, 175, 55, 0.6);"></i>
                     </div>
 
-                    <hr class="luxury-divider my-4" style="border-color: rgba(0,0,0,0.08);">
+                    <!-- Summary Items -->
+                    <div class="vault-items mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2" style="border-bottom: 1px solid rgba(212, 175, 55, 0.1);">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-gem" style="font-size: 0.9rem; color: #800020; opacity: 0.7;"></i>
+                                <span class="text-uppercase tracking-widest" style="font-size: 0.65rem; color: #7a7a7a; font-weight: 600;">Subtotal</span>
+                            </div>
+                            <span class="font-serif text-dark" id="cart-grand-total" style="font-size: 0.95rem; font-weight: 600;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
+                        </div>
 
-                    <div class="d-flex justify-content-between align-items-end mb-4">
-                        <span class="text-uppercase tracking-widest small font-semibold text-dark" style="font-size: 0.75rem;">Estimated Total</span>
-                        <span class="font-serif font-semibold" id="cart-estimated-total" style="font-size: 1.4rem; line-height: 1; color: #800020;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
+                        <div class="d-flex justify-content-between align-items-center" style="padding-bottom: 0.5rem;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-truck" style="font-size: 0.9rem; color: #800020; opacity: 0.7;"></i>
+                                <span class="text-uppercase tracking-widest" style="font-size: 0.65rem; color: #7a7a7a; font-weight: 600;">Secured Shipping</span>
+                            </div>
+                            <span class="text-uppercase tracking-widest" style="font-size: 0.65rem; color: #28a745; font-weight: 700;">Complimentary</span>
+                        </div>
                     </div>
 
-                    <a href="#" class="btn d-block text-center w-100 py-3 text-uppercase tracking-widest text-decoration-none rounded-0 mb-2" style="background-color: #111111; color: #ffffff; font-size: 0.8rem; letter-spacing: 2px;">
-                        Proceed to Secure Checkout
+                    <!-- Divider with Premium Look -->
+                    <div style="height: 2px; background: linear-gradient(to right, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.1)); margin: 1rem 0;"></div>
+
+                    <!-- Total Section -->
+                    <div class="total-section mb-4 py-3">
+                        <div class="d-flex justify-content-between align-items-baseline">
+                            <span class="text-uppercase tracking-widest font-weight-bold" style="font-size: 0.7rem; color: #7a7a7a; letter-spacing: 1px;">Estimated Total</span>
+                            <div class="text-right">
+                                <span class="font-serif" id="cart-estimated-total" style="font-size: 1.4rem; font-weight: 700; color: #800020; display: block; line-height: 1.1;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
+                                <p class="text-muted" style="font-size: 0.6rem; margin-top: 2px; margin-bottom: 0;">All taxes included</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <a href="#" class="checkout-btn btn d-block text-center w-100 py-3 text-uppercase tracking-widest text-decoration-none rounded-0 mb-3 fw-bold" style="background: linear-gradient(135deg, #111111 0%, #2a0e14 100%); color: #ffffff; font-size: 0.8rem; letter-spacing: 1.5px; transition: all 0.3s ease; border: none;">
+                        <i class="bi bi-lock me-2"></i> Proceed to Secure Checkout
                     </a>
-                    
-                    <p class="text-center text-muted italic mt-3 mb-0" style="font-size: 0.75rem;">
-                        🛡️ Insured shipping and premium packaging included with your valuation.
+
+                    <!-- Trust Badges -->
+                    <div class="trust-section p-3 rounded-0" style="background-color: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.15);">
+                        <p class="text-center text-muted mb-0" style="font-size: 0.65rem; line-height: 1.5;">
+                            <i class="bi bi-shield-check" style="color: #28a745; margin-right: 4px;"></i>
+                            <strong>Secure Transaction</strong>
+                            <br>
+                            <span style="color: #7a7a7a;">100% SSL Encrypted • Insurance Included</span>
+                        </p>
+                    </div>
+
+                    <!-- Additional Info -->
+                    <p class="text-center text-muted italic mt-3 mb-0" style="font-size: 0.65rem; letter-spacing: 0.5px; color: #999999;">
+                        ✓ Premium packaging • Free express shipping • Lifetime verification
                     </p>
                 </div>
             </div>
         </div>
     {% else %}
-        <div class="text-center py-5 border bg-light-neutral animate-fade-in" style="background-color: #faf9f6;">
-            <p class="font-serif italic text-muted mb-4" style="font-size: 1.1rem;">Your shopping vault is currently empty.</p>
-            <a href="/" class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest small" style="font-size: 0.75rem;">
+        <div class="text-center py-3 border bg-light-neutral animate-fade-in" style="background-color: #faf9f6;">
+            <p class="font-serif italic text-muted mb-2" style="font-size: 0.95rem;">Your shopping vault is currently empty.</p>
+            <a href="/" class="btn btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest small" style="font-size: 0.65rem;">
                 Explore Royal Masterpieces
             </a>
         </div>

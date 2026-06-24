@@ -3,51 +3,49 @@
 {% load custom_filter %}
 
 {% block content %}
-<div class="container pt-5 pb-5 mt-2">
-    <div class="mb-4 animate-fade-in">
-        <a href="/" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
+<div class="container pt-2 pb-5 mt-0">
+    <!-- Back to Catalog Link Anchor -->
+    <div class="mb-3 animate-fade-in">
+        <a href="/" class="luxury-back-link text-decoration-none text-uppercase tracking-widest text-muted" style="font-size: 0.75rem; letter-spacing: 1.5px;">
             ← Back to Royal Collection
         </a>
     </div>
 
     <div class="row g-5 {% if not product.image_link %}justify-content-center{% endif %}">
         
+        <!-- Showcase Stage Image Gallery Segment -->
         {% if product.image_link %}
         <div class="col-lg-6 animate-fade-in">
-            <div class="luxury-image-wrapper text-center p-4">
+            <div class="luxury-image-wrapper text-center p-3" style="background-color: #fdfdfd; border: 1px solid rgba(0,0,0,0.02);">
                 {% with img_list=product.image_link|split_images %}
-                    <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="img-fluid luxury-product-img mb-3" id="main-product-image" style="transition: opacity 0.2s ease-in-out; max-height: 500px; object-fit: contain;">
-                    
-                    {% if img_list|length > 1 %}
-                        <div class="row g-2 justify-content-center mt-2" id="product-thumb-gallery">
-                            {% for img_url in img_list %}
-                                <div class="col-2 col-md-2">
-                                    <div class="thumb-frame border p-1 {% if forloop.first %}border-dark{% endif %}" style="cursor: pointer; overflow: hidden; max-height: 80px; transition: border-color 0.3s ease;">
-                                        <img src="{{ img_url }}" alt="{{ product.name }} View {{ forloop.counter }}" class="img-fluid gallery-thumb-item" onclick="swapLuxuryStageImage(this)">
+                    <div class="d-flex gap-3 align-items-flex-start justify-content-center">
+                        {% if img_list|length > 1 %}
+                            <div class="d-flex flex-column gap-2" id="product-thumb-gallery" style="min-width: 80px;">
+                                {% for img_url in img_list %}
+                                    <div class="thumb-frame border p-1 {% if forloop.first %}border-dark{% endif %}" style="cursor: pointer; overflow: hidden; height: 80px; width: 80px; transition: border-color 0.3s ease; flex-shrink: 0;">
+                                        <img src="{{ img_url }}" alt="{{ product.name }} View {{ forloop.counter }}" class="img-fluid gallery-thumb-item" onclick="swapLuxuryStageImage(this)" style="height: 100%; object-fit: contain;">
                                     </div>
-                                </div>
-                            {% endfor %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="height: 460px;">
+                            <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="img-fluid luxury-product-img" id="main-product-image" style="transition: opacity 0.2s ease-in-out; max-height: 100%; object-fit: contain;">
                         </div>
-                    {% endif %}
+                    </div>
                 {% endwith %}
             </div>
         </div>
         {% endif %}
 
+        <!-- Configuration Ordering Workspace -->
         <div class="{% if product.image_link %}col-lg-6{% else %}col-lg-8{% endif %} animate-fade-in">
             <div class="product-specification-panel {% if product.image_link %}ps-lg-4{% endif %}">
                 
-                <span class="text-uppercase tracking-widest text-muted d-block mb-2" style="font-size: 0.75rem; letter-spacing: 2px;">{{ product.get_category_display }}</span>
-                <h1 class="font-serif luxury-detail-title mb-1" style="font-size: 2.5rem; color: var(--text-dark);">{{ product.name }}</h1>
+                <h1 class="font-serif luxury-detail-title mb-2" style="font-size: 1.85rem; color: var(--text-dark); font-weight: 500; letter-spacing: 0.5px;">{{ product.name }}</h1>
 
-                <div class="luxury-description mt-3 mb-4">
-                    <p class="font-serif italic text-dark-neutral" style="font-size: 1.05rem; line-height: 1.6; color: #4a4a4a;">
-                        {{ product.description }}
-                    </p>
-                </div>
-                
-                <div class="luxury-price-display mb-2">
-                    <h3 class="font-serif color-burgundy" id="dynamic-main-price" style="font-size: 1.8rem; font-weight: 600; color: #800020;">
+                <div class="luxury-price-display mb-3">
+                    <h3 class="font-serif color-burgundy" id="dynamic-main-price" style="font-size: 1.45rem; font-weight: 600; color: #800020;">
                         {% if product.variants.exists %}
                            Rs. {{ product.variants.first.price|floatformat:2 }}
                         {% else %}
@@ -56,23 +54,24 @@
                     </h3>
                 </div>
 
+                <!-- Customization Configurator Trigger -->
                 <div class="mb-4">
-                    <a href="javascript:void(0);" onclick="toggleLuxuryMatrix(true)" class="text-uppercase tracking-widest small font-serif text-decoration-none" style="color: var(--royal-gold); font-size: 0.75rem; font-weight: 600; letter-spacing: 2px;">
-                        <i class="bi bi-grid-3x3-gap me-1"></i> View Full Arrangement Matrix & Specs →
+                    <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#customizationModal" class="text-uppercase tracking-widest font-serif text-decoration-none" style="color: #800020; font-size: 0.75rem; font-weight: 600; letter-spacing: 1.5px;">
+                        <i class="bi bi-sliders me-1"></i> Customize Options →
                     </a>
                 </div>
 
-                <hr class="luxury-divider mb-4" style="border-color: var(--border-color); opacity: 1;">
+                <hr class="luxury-divider mb-4" style="border-color: rgba(0,0,0,0.08); opacity: 1;">
 
                 <form id="add-to-vault-form">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" id="variant-selector" name="variant_id" value="{{ product.variants.first.id }}">
-                    
+
                     <div class="row g-3 mb-4 align-items-center">
                         <div class="col-8 col-md-9">
                             <span class="text-uppercase tracking-widest small text-muted d-block mb-1" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">Selected Configuration:</span>
-                            <span id="active-variant-label" class="font-serif text-dark small d-block fw-bold" style="letter-spacing: 0.5px;">
+                            <span id="active-variant-label" class="font-serif text-dark d-block fw-bold" style="letter-spacing: 0.3px; font-size: 0.9rem;">
                                 {% if product.variants.first.size_or_length %}
                                     {% if product.category == "RING" or product.category == "BANGLE" or product.category == "BRACELET" %}
                                         Size {{ product.variants.first.size_or_length }}
@@ -84,84 +83,118 @@
                                 {% else %}
                                     Signature Arrangement
                                 {% endif %}
+                                | {{ product.variants.first.base_metal|default:"Standard" }} 
+                                {% if product.variants.first.purity and product.variants.first.purity != "—" %} | {{ product.variants.first.purity }} {% endif %}
                             </span>
                         </div>
 
                         <div class="col-4 col-md-3">
-                            <label for="quantity-input" class="text-uppercase tracking-widest small text-muted d-block mb-2" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 1px;">
+                            <label for="quantity-input" class="text-uppercase tracking-widest text-muted d-block mb-1" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">
                                 Quantity
                             </label>
-                            <input type="number" id="quantity-input" name="quantity" value="1" min="1" max="10" class="form-control rounded-0 py-2 text-center text-dark font-serif shadow-none" style="border-color: #dddddd; font-size: 0.9rem;">
+                            <input type="number" id="quantity-input" name="quantity" value="1" min="1" max="10" class="form-control rounded-0 py-1 text-center text-dark font-serif shadow-none" style="border-color: #dddddd; font-size: 0.95rem; height: 38px;">
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest py-3 mb-2" style="font-size: 0.85rem; letter-spacing: 0.15em; background-color: #111111;" {% if not product.variants.exists %}disabled{% endif %}>
-                        Add to Shopping Vault
-                    </button>
-                    
-                    <button type="button" id="detail-wishlist-toggle-btn" class="btn btn-outline-dark rounded-0 px-4 py-3 text-uppercase tracking-widest w-100" style="font-size: 0.85rem; letter-spacing: 0.15em;">
-                        {% if product.id in user_wishlist_ids %}
-                            <i class="bi bi-heart-fill me-2" id="detail-heart-icon" style="color: #800020;"></i> 
-                            <span id="detail-wishlist-text">In Your Wishlist</span>
-                        {% else %}
-                            <i class="bi bi-heart me-2" id="detail-heart-icon"></i> 
-                            <span id="detail-wishlist-text">Add To Wishlist Vault</span>
-                        {% endif %}
-                    </button>
+                    <div class="d-flex gap-2 align-items-center mb-2">
+                        <button type="submit" class="btn btn-dark rounded-0 text-uppercase tracking-widest py-2 flex-grow-1" style="font-size: 0.8rem; letter-spacing: 0.15em; background-color: #111111; height: 44px;" {% if not product.variants.exists %}disabled{% endif %}>
+                            Add to Shopping Vault
+                        </button>
+                        
+                        <button type="button" id="detail-wishlist-toggle-btn" class="btn btn-outline-dark rounded-0 d-flex align-items-center justify-content-center" style="border-color: #333; width: 44px; height: 44px; padding: 0;" title="Save to Wishlist">
+                            {% if product.id in user_wishlist_ids %}
+                                <i class="bi bi-heart-fill" id="detail-heart-icon" style="color: #800020; font-size: 1.1rem;"></i> 
+                            {% else %}
+                                <i class="bi bi-heart" id="detail-heart-icon" style="font-size: 1.1rem;"></i> 
+                            {% endif %}
+                        </button>
+                    </div>
+
+                    <div id="cart-inline-confirmation" class="alert d-none rounded-0 py-2 px-3 mt-2 mb-3 border-0 animate-fade-in" style="background-color: #faf4f5; border-left: 3px solid #800020 !important;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="font-serif small text-dark" style="font-size: 0.85rem;">
+                                <i class="bi bi-check-circle-fill me-2" style="color: #800020;"></i> Piece successfully allocated to your vault.
+                            </span>
+                            <a href="{% url 'cart-view' %}" class="text-uppercase tracking-wider small fw-bold font-serif text-decoration-underline ms-3" style="color: #800020; font-size: 0.75rem;">
+                                View Cart →
+                            </a>
+                        </div>
+                    </div>
                 </form>
 
+                <!-- Collapsible Panel Box for Gemstone & Metal Details -->
                 {% if product.variants.exists %}
-                    <div class="luxury-spec-box p-4 border mt-4 bg-white rounded-0" style="border-color: #eae1d3 !important;">
-                        <h5 class="font-serif text-uppercase tracking-wider mb-3" style="font-size: 1rem; color: #111111; letter-spacing: 1px;">Product Specifications</h5>
+                    <div class="luxury-spec-accordion-wrapper mt-4">
+                        <button class="btn btn-outline-dark rounded-0 w-100 d-flex justify-content-between align-items-center text-uppercase tracking-widest py-3 px-3 shadow-none collapsed" 
+                                type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#specificationsCollapse" 
+                                aria-expanded="false" 
+                                aria-controls="specificationsCollapse" 
+                                style="font-size: 0.75rem; border-color: #eae1d3; background-color: #faf8f5; color: #333; font-weight: 600; letter-spacing: 1px;">
+                            <span><i class="bi bi-gem me-2" style="color: #800020;"></i> Gemstone & Metal Specifications</span>
+                            <i class="bi bi-chevron-down spec-chevron-icon transition-transform" style="font-size: 0.85rem;"></i>
+                        </button>
                         
-                        <div class="row g-3 align-items-center" id="main-spec-grid">
-                            <div class="col-5 text-uppercase tracking-widest text-muted small" style="font-size: 0.65rem; letter-spacing: 1.5px;">Gross Weight:</div>
-                            <div class="col-7 font-serif text-dark small text-sm-start" id="spec-gross" style="word-break: break-word; line-height: 1.4;">
-                                {{ product.variants.first.gross_weight|default:"—" }}
-                            </div>
+                        <div class="collapse" id="specificationsCollapse">
+                            <!-- 🟢 FIXED: Valid Bootstrap Spacing classes implemented -->
+                            <div class="luxury-spec-box p-3 border border-top-0 bg-white rounded-0" style="border-color: #eae1d3 !important;">
+                                <div class="row g-2 align-items-center text-dark" id="main-spec-grid" style="font-size: 0.85rem; padding: 5px 0;">
+                                    
+                                    <div class="col-5 text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1px;">Gross Weight:</div>
+                                    <div class="col-7 fw-medium" id="spec-gross" style="word-break: break-word;">
+                                        {{ product.variants.first.gross_weight|default:"—" }}
+                                    </div>
 
-                            <div class="col-12 my-1"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                                    <div class="col-12 my-2"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
 
-                            <div class="col-5 text-uppercase tracking-widest text-muted small" style="font-size: 0.65rem; letter-spacing: 1.5px;">Metal Properties:</div>
-                            <div class="col-7 font-serif text-dark small text-sm-start" id="spec-metal" style="word-break: break-word; line-height: 1.4;">
-                                {{ product.variants.first.metal_type|default:"Precious Metal Blend" }}
-                            </div>
+                                    <div class="col-5 text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1px;">Metal Properties:</div>
+                                    <div class="col-7 fw-medium" id="spec-metal" style="word-break: break-word;">
+                                        {{ product.variants.first.base_metal|default:"Precious Metal Blend" }}
+                                    </div>
 
-                            {% if product.variants.first.carat_weight and product.variants.first.carat_weight != "None" and product.variants.first.carat_weight != "Null" %}
-                                <div id="diamond-spec-group" class="col-12 p-0 m-0">
-                                    <div class="row g-3 align-items-center m-0 w-100">
-                                        <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
-                                        
-                                        <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Weight:</div>
-                                        <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-carat" style="word-break: break-word; line-height: 1.4;">
-                                            {{ product.variants.first.carat_weight|default:"—" }}
-                                        </div>
-                                        
-                                        <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
-                                        
-                                        <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Clarity:</div>
-                                        <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-clarity" style="word-break: break-word; line-height: 1.4;">
-                                            {{ product.variants.first.diamond_clarity|default:"—" }}
-                                        </div>
-                                        
-                                        <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
-                                        
-                                        <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Color:</div>
-                                        <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-color" style="word-break: break-word; line-height: 1.4;">
-                                            {{ product.variants.first.diamond_color|default:"—" }}
-                                        </div>
+                                    <div class="col-12 my-2"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
 
-                                        <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
+                                    <div class="col-5 text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1px;">Metal Purity:</div>
+                                    <div class="col-7 fw-medium" id="spec-purity" style="word-break: break-word;">
+                                        {{ product.variants.first.purity|default:"—" }}
+                                    </div>
 
-                                        <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Total Diamonds:</div>
-                                        <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-pcs" style="word-break: break-word; line-height: 1.4;">
-                                            {% if product.variants.first.diamond_pcs %}{{ product.variants.first.diamond_pcs }} Pcs{% else %}—{% endif %}
+                                    <!-- JavaScript Dynamic Diamond Specs Block -->
+                                    <div class="col-12 p-0 m-0" id="diamond-spec-group" style="{% if not product.variants.first.diamond_carat or product.variants.first.diamond_carat == 'None' %}display: none;{% endif %}">
+                                        <div class="row g-2 align-items-center m-0 w-100">
+                                            <div class="col-12 my-2 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+                                            
+                                            <div class="col-5 text-uppercase tracking-widest text-muted p-0" style="font-size: 0.65rem; letter-spacing: 1px;">Diamond Weight:</div>
+                                            <div class="col-7 fw-medium p-0 ps-3" id="spec-carat" style="word-break: break-word;">
+                                                {{ product.variants.first.diamond_carat|default:"—" }}
+                                            </div>
+                                            
+                                            <div class="col-12 my-2 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+                                            
+                                            <div class="col-5 text-uppercase tracking-widest text-muted p-0" style="font-size: 0.65rem; letter-spacing: 1px;">Diamond Clarity:</div>
+                                            <div class="col-7 fw-medium p-0 ps-3" id="spec-clarity" style="word-break: break-word;">
+                                                {{ product.variants.first.diamond_clarity|default:"—" }}
+                                            </div>
+                                            
+                                            <div class="col-12 my-2 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+                                            
+                                            <div class="col-5 text-uppercase tracking-widest text-muted p-0" style="font-size: 0.65rem; letter-spacing: 1px;">Diamond Color:</div>
+                                            <div class="col-7 fw-medium p-0 ps-3" id="spec-color" style="word-break: break-word;">
+                                                {{ product.variants.first.diamond_color|default:"—" }}
+                                            </div>
+
+                                            <div class="col-12 my-2 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+
+                                            <div class="col-5 text-uppercase tracking-widest text-muted p-0" style="font-size: 0.65rem; letter-spacing: 1px;">Total Diamonds:</div>
+                                            <div class="col-7 fw-medium p-0 ps-3" id="spec-pcs" style="word-break: break-word;">
+                                                {% if product.variants.first.diamond_pcs %}{{ product.variants.first.diamond_pcs }} Pcs{% else %}—{% endif %}
+                                            </div>
                                         </div>
                                     </div>
+
                                 </div>
-                            {% else %}
-                                <div id="diamond-spec-group" class="col-12 p-0 m-0" style="display: none;"></div>
-                            {% endif %}
+                            </div>
                         </div>
                     </div>
                 {% endif %}
@@ -171,98 +204,50 @@
     </div>
 </div>
 
+<!-- Modal Customization Configuration Workspace Panel Options -->
 {% if product.variants.exists %}
-<div id="luxury-matrix-overlay" class="luxury-matrix-panel" style="display:none;" onclick="toggleLuxuryMatrix(false)">
-    <div class="matrix-content-wrapper p-4 p-md-5" onclick="event.stopPropagation()">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="font-serif text-uppercase tracking-wider m-0" style="color: #3b141c; font-size: 1.3rem;">Arrangement Specifications Matrix</h4>
-            <button type="button" onclick="toggleLuxuryMatrix(false)" class="matrix-close-btn" aria-label="Close" style="background: transparent; border: none; font-size: 1.5rem; color: #7a7a7a; cursor: pointer;"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <p class="text-muted small tracking-wide mb-4">Compare configuration parameters, pricing structures, and item hallmarks across your curated choices below.</p>
+<div class="modal fade" id="customizationModal" tabindex="-1" aria-labelledby="customizationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content rounded-0 border-0 shadow-lg p-2">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title font-serif text-uppercase tracking-wider fw-bold" id="customizationModalLabel" style="color: #111111; font-size: 1.15rem;">Customise Your Arrangement</h5>
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.8rem;"></button>
+      </div>
+      <div class="modal-body p-4">
         
-        <div class="table-responsive">
-            <table class="table align-middle matrix-table font-serif">
-                <thead class="text-uppercase tracking-widest" style="font-size: 0.65rem; background-color: #fcfbf9;">
-                    <tr>
-                        <th scope="col" class="py-3 px-3 border-bottom-0">Arrangement</th>
-                        <th scope="col" class="py-3 border-bottom-0">Metal Properties</th>
-                        <th scope="col" class="py-3 border-bottom-0">Gross Weight</th>
-                        
-                        {% if product.variants.first.carat_weight %}
-                            <th scope="col" class="py-3 border-bottom-0">Diamond Weight</th>
-                            <th scope="col" class="py-3 border-bottom-0">Clarity/Color</th>
-                            <th scope="col" class="py-3 border-bottom-0">Total Pcs</th>
-                        {% endif %}
-                        
-                        <th scope="col" class="py-3 text-end border-bottom-0">Price</th>
-                        <th scope="col" class="py-3 text-center border-bottom-0">Action</th>
-                    </tr>
-                </thead>
-                <tbody style="font-size: 0.85rem;">
-                    {% for var in product.variants.all %}
-                    <tr id="matrix-row-{{ var.id }}" class="{% if forloop.first %}table-active-selection{% endif %}">
-                        <td class="py-3 px-3 fw-bold text-dark">
-                            {% if var.size_or_length %}
-                                {% if product.category == "RING" or product.category == "BANGLE" or product.category == "BRACELET" %}
-                                    Size {{ var.size_or_length }}
-                                {% elif product.category == "NECKLACE" or product.category == "CHAIN" %}
-                                    {{ var.size_or_length }} Inches
-                                {% else %}
-                                    Sizing {{ var.size_or_length }}
-                                {% endif %}
-                            {% else %}
-                                Signature Layout Tier {{ forloop.counter }}
-                            {% endif %}
-                        </td>
-                        <td class="py-3 text-muted">{{ var.metal_type|default:"—" }}</td>
-                        <td class="py-3 font-serif fw-bold text-dark">{{ var.gross_weight|default:"—" }}</td>
-                        
-                        {% if product.variants.first.carat_weight %}
-                            <td class="py-3 text-muted" style="max-width: 180px; word-break: break-word;">{{ var.carat_weight|default:"—" }}</td>
-                            <td class="py-3">{{ var.diamond_clarity|default:"--" }} / {{ var.diamond_color|default:"--" }}</td>
-                            <td class="py-3 text-muted">{% if var.diamond_pcs %}{{ var.diamond_pcs }} Pcs{% else %}—{% endif %}</td>
-                        {% endif %}
-                        
-                        <td class="py-3 text-end fw-bold text-dark">Rs. {{ var.price|floatformat:2 }}</td>
-                        <td class="py-3 text-center">
-                            {% if var.size_or_length %}
-                                {% if product.category == "RING" or product.category == "BANGLE" or product.category == "BRACELET" %}
-                                    {% with "Size "|add:var.size_or_length as js_descriptor %}
-                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest" style="font-size: 0.65rem;"
-                                                onclick="selectVariantFromMatrix('{{ var.id }}', '{{ var.price }}', '{{ js_descriptor }}', '{{ var.carat_weight }}', '{{ var.diamond_clarity }}', '{{ var.diamond_color }}', '{{ var.diamond_pcs }}', '{{ var.gross_weight }}', '{{ var.metal_type }}')">
-                                            Select
-                                        </button>
-                                    {% endwith %}
-                                {% elif product.category == "NECKLACE" or product.category == "CHAIN" %}
-                                    {% with var.size_or_length|add:" Inches" as js_descriptor %}
-                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest" style="font-size: 0.65rem;"
-                                                onclick="selectVariantFromMatrix('{{ var.id }}', '{{ var.price }}', '{{ js_descriptor }}', '{{ var.carat_weight }}', '{{ var.diamond_clarity }}', '{{ var.diamond_color }}', '{{ var.diamond_pcs }}', '{{ var.gross_weight }}', '{{ var.metal_type }}')">
-                                            Select
-                                        </button>
-                                    {% endwith %}
-                                {% else %}
-                                    {% with "Size "|add:var.size_or_length as js_descriptor %}
-                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest" style="font-size: 0.65rem;"
-                                                onclick="selectVariantFromMatrix('{{ var.id }}', '{{ var.price }}', '{{ js_descriptor }}', '{{ var.carat_weight }}', '{{ var.diamond_clarity }}', '{{ var.diamond_color }}', '{{ var.diamond_pcs }}', '{{ var.gross_weight }}', '{{ var.metal_type }}')">
-                                            Select
-                                        </button>
-                                    {% endwith %}
-                                {% endif %}
-                            {% else %}
-                                {% with "Signature Layout Tier "|add:forloop.counter as js_descriptor %}
-                                    <button type="button" class="btn btn-sm btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest" style="font-size: 0.65rem;"
-                                            onclick="selectVariantFromMatrix('{{ var.id }}', '{{ var.price }}', '{{ js_descriptor }}', '{{ var.carat_weight }}', '{{ var.diamond_clarity }}', '{{ var.diamond_color }}', '{{ var.diamond_pcs }}', '{{ var.gross_weight }}', '{{ var.metal_type }}')">
-                                        Select
-                                    </button>
-                                {% endwith %}
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="mb-4">
+            <label class="text-muted small text-uppercase tracking-widest mb-2" style="font-size: 0.7rem; font-weight: 600;">Select Metal Colour</label>
+            <div class="d-flex flex-wrap gap-2" id="metal-options-container"></div>
         </div>
+
+        <div class="mb-4">
+            <label class="text-muted small text-uppercase tracking-widest mb-2" style="font-size: 0.7rem; font-weight: 600;">Select Metal Purity</label>
+            <div class="d-flex flex-wrap gap-2" id="purity-options-container"></div>
+        </div>
+
+        <div class="mb-4">
+            <label class="text-muted small text-uppercase tracking-widest mb-2" style="font-size: 0.7rem; font-weight: 600;">Select Sizing / Length</label>
+            <div class="d-flex flex-wrap gap-2" id="size-options-container"></div>
+        </div>
+
+        <div class="mb-4" id="diamond-quality-section" style="display: none;">
+            <label class="text-muted small text-uppercase tracking-widest mb-2" style="font-size: 0.7rem; font-weight: 600;">Diamond Quality</label>
+            <select class="form-select rounded-0 font-serif shadow-none border" id="diamond-quality-select" style="font-size: 0.9rem; border-color: #dddddd;"></select>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top" style="border-color: #eae1d3 !important;">
+            <div>
+                <span class="d-block text-muted small text-uppercase tracking-widest mb-1" style="font-size: 0.65rem;">Calculated Price</span>
+                <h4 class="font-serif m-0 fw-bold" id="modal-dynamic-price" style="color: #800020; font-size: 1.35rem;">Rs. 0.00</h4>
+            </div>
+            <button type="button" class="btn btn-dark rounded-0 px-4 py-2 text-uppercase tracking-widest" onclick="applyCustomization()" style="font-size: 0.8rem; background-color: #800020; border-color: #800020; height: 44px;">
+                Apply Options
+            </button>
+        </div>
+
+      </div>
     </div>
+  </div>
 </div>
 {% endif %}
 
@@ -270,6 +255,34 @@
     <i class="bi bi-shield-check"></i>
     <span id="toast-message">Allocating to your shopping vault...</span>
 </div>
+
+<style>
+    .custom-attr-btn {
+        font-family: var(--font-sans, sans-serif);
+        font-size: 0.85rem;
+        border-color: #dddddd;
+        color: #555555;
+        transition: all 0.2s ease;
+        background: transparent;
+        padding: 6px 16px !important;
+    }
+    .custom-attr-btn:hover {
+        border-color: #800020;
+        color: #800020;
+    }
+    .custom-attr-btn.active {
+        background-color: #fcf4f6;
+        border-color: #800020;
+        color: #800020;
+        font-weight: 600;
+    }
+    .luxury-spec-accordion-wrapper button:not(.collapsed) .spec-chevron-icon {
+        transform: rotate(180deg);
+    }
+    .spec-chevron-icon {
+        transition: transform 0.3s ease;
+    }
+</style>
 
 <script>
     let autoScrollTimer = null;
@@ -303,81 +316,190 @@
     }
 
     function stopImageAutoScroll() {
-        if (autoScrollTimer) {
-            clearInterval(autoScrollTimer);
-        }
+        if (autoScrollTimer) clearInterval(autoScrollTimer);
     }
 
-    function toggleLuxuryMatrix(show) {
-        const matrixOverlay = document.getElementById('luxury-matrix-overlay');
-        if (matrixOverlay) {
-            if (show) {
-                matrixOverlay.style.display = 'flex';
-                setTimeout(() => matrixOverlay.classList.add('show'), 10);
-                document.body.style.overflow = 'hidden';
-            } else {
-                matrixOverlay.classList.remove('show');
-                setTimeout(() => matrixOverlay.style.display = 'none', 300);
-                document.body.style.overflow = 'auto';
-            }
-        }
-    }
+    const productVariants = [
+        {% for var in product.variants.all %}
+        {
+            id: "{{ var.id }}",
+            price: "{{ var.price|floatformat:2 }}",
+            metal: "{{ var.base_metal|default:'Standard'|escapejs }}",
+            purity: "{{ var.purity|default:'Standard'|escapejs }}", 
+            size: "{{ var.size_or_length|default:'Standard'|escapejs }}",
+            diamond_carat: "{{ var.diamond_carat|default:''|escapejs }}",
+            diamond_clarity: "{{ var.diamond_clarity|default:''|escapejs }}",
+            diamond_color: "{{ var.diamond_color|default:''|escapejs }}",
+            diamond_pcs: "{{ var.diamond_pcs|default:''|escapejs }}",
+            gross_weight: "{{ var.gross_weight|default:''|escapejs }}",
+            diamond_quality: "{{ var.diamond_clarity|default:''|escapejs }}{% if var.diamond_clarity and var.diamond_color %}-{% endif %}{{ var.diamond_color|default:''|escapejs }}"
+        },
+        {% endfor %}
+    ];
 
-    function selectVariantFromMatrix(id, price, descriptor, carat, clarity, color, pcs, grossWeight, metalType) {
-        document.getElementById('variant-selector').value = id;
-        document.getElementById('active-variant-label').innerText = descriptor;
-        document.getElementById('dynamic-main-price').innerText = "Rs. " + parseFloat(price).toFixed(2);
-        
-        if (document.getElementById('spec-gross')) document.getElementById('spec-gross').innerText = grossWeight || '—';
-        if (document.getElementById('spec-metal')) document.getElementById('spec-metal').innerText = metalType || '—';
-        
-        const diamondContainer = document.getElementById('diamond-spec-group');
-        if (diamondContainer) {
-            if (carat && carat !== '' && carat !== 'None' && carat !== 'Null') {
-                diamondContainer.style.display = 'block';
-                
-                if (!document.getElementById('spec-carat')) {
-                    diamondContainer.innerHTML = `
-                        <div class="row g-3 align-items-center m-0 w-100">
-                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
-                            <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Weight:</div>
-                            <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-carat" style="word-break: break-word; line-height: 1.4;"></div>
-                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
-                            <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Clarity:</div>
-                            <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-clarity" style="word-break: break-word; line-height: 1.4;"></div>
-                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
-                            <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Diamond Color:</div>
-                            <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-color" style="word-break: break-word; line-height: 1.4;"></div>
-                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.5;"></div>
-                            <div class="col-5 text-uppercase tracking-widest text-muted small p-0" style="font-size: 0.65rem; letter-spacing: 1.5px;">Total Diamonds:</div>
-                            <div class="col-7 font-serif text-dark small text-sm-start p-0 ps-3" id="spec-pcs" style="word-break: break-word; line-height: 1.4;"></div>
-                        </div>`;
-                }
+    // 🟢 FIXED: Safely builds the active initial string precisely matching the backend array syntax
+    let initialDiamondQuality = "{% if product.variants.exists %}{{ product.variants.first.diamond_clarity|default:''|escapejs }}{% if product.variants.first.diamond_clarity and product.variants.first.diamond_color %}-{% endif %}{{ product.variants.first.diamond_color|default:''|escapejs }}{% endif %}";
 
-                if (document.getElementById('spec-carat')) document.getElementById('spec-carat').innerText = carat;
-                if (document.getElementById('spec-clarity')) document.getElementById('spec-clarity').innerText = clarity || '—';
-                if (document.getElementById('spec-color')) document.getElementById('spec-color').innerText = color || '—';
-                if (document.getElementById('spec-pcs')) document.getElementById('spec-pcs').innerText = pcs ? pcs + ' Pcs' : '—';
-            } else {
-                diamondContainer.style.display = 'none';
-            }
-        }
-        
-        document.querySelectorAll('.matrix-table tr').forEach(row => row.classList.remove('table-active-selection'));
-        const activeRow = document.getElementById(`matrix-row-${id}`);
-        if (activeRow) activeRow.classList.add('table-active-selection');
-        
-        toggleLuxuryMatrix(false);
-    }
+    let currentSelection = {
+        metal: "{% if product.variants.exists %}{{ product.variants.first.base_metal|default:'Standard'|escapejs }}{% else %}Standard{% endif %}",
+        purity: "{% if product.variants.exists %}{{ product.variants.first.purity|default:'Standard'|escapejs }}{% else %}Standard{% endif %}",
+        size: "{% if product.variants.exists %}{{ product.variants.first.size_or_length|default:'Standard'|escapejs }}{% else %}Standard{% endif %}",
+        diamond_quality: initialDiamondQuality ? initialDiamondQuality : null
+    };
+
+    let matchedVariant = null;
 
     document.addEventListener("DOMContentLoaded", function() {
         startImageAutoScroll();
-
         const galleryContainer = document.getElementById("product-thumb-gallery");
         if (galleryContainer) {
             galleryContainer.addEventListener("mouseenter", stopImageAutoScroll);
             galleryContainer.addEventListener("mouseleave", startImageAutoScroll);
         }
+
+        if (productVariants.length > 0) {
+            initCustomizationUI();
+        }
+
+        const activeForm = document.getElementById("add-to-vault-form");
+        if (activeForm) {
+            activeForm.addEventListener("submit", function() {
+                const inlineAlert = document.getElementById("cart-inline-confirmation");
+                if (inlineAlert) {
+                    inlineAlert.classList.remove("d-none");
+                }
+            });
+        }
     });
+
+    function initCustomizationUI() {
+        const uniqueMetals = [...new Set(productVariants.map(v => v.metal).filter(m => m !== 'None' && m !== ''))];
+        const uniquePurities = [...new Set(productVariants.map(v => v.purity).filter(p => p !== 'None' && p !== '' && p !== '—'))];
+        const uniqueSizes = [...new Set(productVariants.map(v => v.size).filter(s => s !== 'None' && s !== ''))];
+        const uniqueDiamondQualities = [...new Set(productVariants.map(v => v.diamond_quality).filter(q => q !== "-" && q !== ""))];
+
+        const metalContainer = document.getElementById('metal-options-container');
+        if (uniqueMetals.length > 0) {
+            uniqueMetals.forEach(metal => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `btn rounded-0 px-3 py-2 custom-attr-btn ${metal === currentSelection.metal ? 'active' : ''}`;
+                btn.innerText = metal;
+                btn.onclick = function() { updateSelection('metal', metal, this); };
+                metalContainer.appendChild(btn);
+            });
+        } else {
+            metalContainer.innerHTML = '<span class="text-muted small">As Per Design</span>';
+        }
+
+        const purityContainer = document.getElementById('purity-options-container');
+        if (purityContainer) {
+            if (uniquePurities.length > 0 && uniquePurities[0] !== 'Standard') {
+                uniquePurities.forEach(purity => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `btn rounded-0 px-3 py-2 custom-attr-btn ${purity === currentSelection.purity ? 'active' : ''}`;
+                    btn.innerText = purity;
+                    btn.onclick = function() { updateSelection('purity', purity, this); };
+                    purityContainer.appendChild(btn);
+                });
+            } else {
+                purityContainer.innerHTML = '<span class="text-muted small">Standard Purity</span>';
+            }
+        }
+
+        const sizeContainer = document.getElementById('size-options-container');
+        if (uniqueSizes.length > 0 && uniqueSizes[0] !== 'Standard') {
+            uniqueSizes.forEach(size => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `btn rounded-0 px-3 py-2 custom-attr-btn ${size === currentSelection.size ? 'active' : ''}`;
+                btn.innerText = size;
+                btn.onclick = function() { updateSelection('size', size, this); };
+                sizeContainer.appendChild(btn);
+            });
+        } else {
+            sizeContainer.innerHTML = '<span class="text-muted small">Standard Sizing Only</span>';
+        }
+
+        const diamondSection = document.getElementById('diamond-quality-section');
+        const diamondSelect = document.getElementById('diamond-quality-select');
+        if (uniqueDiamondQualities.length > 0) {
+            diamondSection.style.display = 'block';
+            diamondSelect.innerHTML = ''; 
+            uniqueDiamondQualities.forEach(quality => {
+                diamondSelect.innerHTML += `<option value="${quality}" ${quality === currentSelection.diamond_quality ? 'selected' : ''}>${quality}</option>`;
+            });
+            diamondSelect.addEventListener('change', (e) => updateSelection('diamond_quality', e.target.value, null));
+        }
+
+        findMatchingVariant();
+    }
+
+    function updateSelection(type, value, element) {
+        currentSelection[type] = value;
+        if (element) {
+            let siblings = element.parentNode.children;
+            for (let sibling of siblings) {
+                sibling.classList.remove('active');
+            }
+            element.classList.add('active');
+        }
+        findMatchingVariant();
+    }
+
+    function findMatchingVariant() {
+        matchedVariant = productVariants.find(v => {
+            const metalMatch = (v.metal === currentSelection.metal) || (currentSelection.metal === 'Standard');
+            const purityMatch = (v.purity === currentSelection.purity) || (currentSelection.purity === 'Standard');
+            const sizeMatch = (v.size === currentSelection.size) || (currentSelection.size === 'Standard');
+            const diamondMatch = (currentSelection.diamond_quality === null) || (v.diamond_quality === currentSelection.diamond_quality);
+            return metalMatch && purityMatch && sizeMatch && diamondMatch;
+        });
+
+        const priceDisplay = document.getElementById('modal-dynamic-price');
+        if (matchedVariant) {
+            priceDisplay.innerText = `Rs. ${matchedVariant.price}`;
+            priceDisplay.style.color = "#800020";
+        } else {
+            priceDisplay.innerText = "Combination Unavailable";
+            priceDisplay.style.color = "#777777";
+        }
+    }
+
+    function applyCustomization() {
+        if (!matchedVariant) {
+            alert("This specific combination is currently unavailable.");
+            return;
+        }
+
+        document.getElementById('variant-selector').value = matchedVariant.id;
+        document.getElementById('dynamic-main-price').innerText = `Rs. ${matchedVariant.price}`;
+        
+        let labelText = "";
+        if (matchedVariant.size !== 'Standard') labelText += `Size ${matchedVariant.size} | `;
+        labelText += `${matchedVariant.metal}`;
+        if (matchedVariant.purity !== 'Standard' && matchedVariant.purity !== '—') labelText += ` | ${matchedVariant.purity}`;
+        document.getElementById('active-variant-label').innerText = labelText;
+
+        if(document.getElementById('spec-gross')) document.getElementById('spec-gross').innerText = matchedVariant.gross_weight || '—';
+        if(document.getElementById('spec-metal')) document.getElementById('spec-metal').innerText = matchedVariant.metal || '—';
+        if(document.getElementById('spec-purity')) document.getElementById('spec-purity').innerText = matchedVariant.purity || '—';
+        
+        const diamondContainer = document.getElementById('diamond-spec-group');
+        if (matchedVariant.diamond_carat && matchedVariant.diamond_carat !== 'None' && matchedVariant.diamond_carat !== '') {
+            diamondContainer.style.display = 'block';
+            
+            if(document.getElementById('spec-carat')) document.getElementById('spec-carat').innerText = matchedVariant.diamond_carat;
+            if(document.getElementById('spec-clarity')) document.getElementById('spec-clarity').innerText = matchedVariant.diamond_clarity || '—';
+            if(document.getElementById('spec-color')) document.getElementById('spec-color').innerText = matchedVariant.diamond_color || '—';
+            if(document.getElementById('spec-pcs')) document.getElementById('spec-pcs').innerText = matchedVariant.diamond_pcs ? `${matchedVariant.diamond_pcs} Pcs` : '—';
+        } else {
+            diamondContainer.style.display = 'none';
+        }
+
+        var modal = bootstrap.Modal.getInstance(document.getElementById('customizationModal'));
+        if (modal) modal.hide();
+    }
 </script>
 {% endblock %}

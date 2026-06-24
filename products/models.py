@@ -29,60 +29,64 @@ class Product(models.Model):
 
 
 class ProductVariant(models.Model):
-
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name="variants"
     )
     variant_sku = models.CharField(max_length=100, unique=True)
 
-    metal_type = models.CharField(
-        max_length=50, blank=True, null=True
-    )  # e.g., '18k Yellow Gold'
-    diamond_color = models.CharField(
-        max_length=100, blank=True, null=True
-    )  # e.g., 'G-H'
-    diamond_clarity = models.CharField(
-        max_length=100, blank=True, null=True
-    )  # e.g., 'SI1'
+    base_metal = models.CharField(max_length=50, blank=True, null=True)
+    metal_color = models.CharField(max_length=50, blank=True, null=True)
+    purity = models.CharField(max_length=20, blank=True, null=True)
 
-    diamond_pcs = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="Number of diamond pieces (e.g., '14', '42 Center & Accents')",
+    diamond_clarity = models.CharField(max_length=100, blank=True, null=True)
+    diamond_color = models.CharField(max_length=100, blank=True, null=True)
+    diamond_cut = models.CharField(max_length=100, blank=True, null=True)
+    diamond_carat = models.CharField(max_length=255, blank=True, null=True)
+    diamond_pcs = models.CharField(max_length=255, blank=True, null=True)
+
+    net_weight = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True
+    )
+    gross_weight = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True
+    )
+    stone_weight = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True
     )
 
-    gross_weight = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="e.g., '5.24g' or '12.5 Grams'",
+    metal_charges = models.DecimalField(
+        max_digits=12, decimal_places=4, blank=True, null=True
+    )
+    making_charges = models.DecimalField(
+        max_digits=12, decimal_places=4, blank=True, null=True
+    )
+    making_charges_discount = models.DecimalField(
+        max_digits=12, decimal_places=4, blank=True, null=True, default=0
     )
 
-    carat_weight = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="e.g., '0.50', '0.75 TCW', or '0.50 Center / 0.25 Accents'",
+    diamond_charges = models.DecimalField(
+        max_digits=12, decimal_places=4, blank=True, null=True
+    )
+    diamond_charges_discount = models.DecimalField(
+        max_digits=12, decimal_places=4, blank=True, null=True, default=0
     )
 
-    # Size variations
-    size_or_length = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="e.g., Ring Size 6, 18-inch chain, 2.4 bangle",
+    tax = models.DecimalField(max_digits=12, decimal_places=4, blank=True, null=True)
+
+    price = models.DecimalField(max_digits=12, decimal_places=4)
+    max_price = models.DecimalField(
+        max_digits=12, decimal_places=4, blank=True, null=True
     )
 
-    price = models.DecimalField(max_digits=12, decimal_places=2)
+    size_or_length = models.CharField(max_length=100, blank=True, null=True)
+    stock_count = models.IntegerField(default=1)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    stock_count = models.IntegerField(default=1)
-
     def __str__(self):
-        return f"{self.product.name} - {self.metal_type} - {self.price}"
+        metal_desc = f"{self.purity or ''} {self.metal_color or ''} {self.base_metal or ''}".strip()
+        return f"{self.product.name} - {metal_desc} - Rs. {self.price}"
 
 
 class CartItem(models.Model):

@@ -3,50 +3,138 @@
 document.addEventListener("DOMContentLoaded", function () {
     
     // ========================================================
-    // BLOCK 1: GLOBAL CATALOG GRID HEART TOGGLES (AJAX DELEGATION)
+    // BLOCK 1: UNIVERSAL CATALOG GRID HEART TOGGLES (EVENT DELEGATION)
     // ========================================================
-    document.addEventListener("submit", function(e) {
-        const activeForm = e.target.closest(".wishlist-toggle-form");
-        if (!activeForm) return;
+    document.body.addEventListener("click", function (e) {
+        // Find if the clicked element belongs to a wishlist toggle heart button
+        const heartBtn = e.target.closest(".card-wishlist-btn");
+        if (!heartBtn) return;
 
-        e.preventDefault(); 
-        e.stopImmediatePropagation(); // Prevents multiple bindings from executing side-by-side
+        e.preventDefault();
+        e.stopPropagation();
 
-        const dataPayload = new FormData(activeForm);
-        const targetHeartIcon = activeForm.querySelector(".wishlist-heart-btn i");
-        const targetActionUrl = activeForm.getAttribute("action") || "/product/add-to-wishlist/";
+        const productId = heartBtn.getAttribute("data-product-id");
+        const variantId = heartBtn.getAttribute("data-variant-id");
+        
+        // Grab the active CSRF protection token safely from your layout container
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
 
-        fetch(targetActionUrl, { 
+        // Package the values up cleanly to pass directly to Django's AddTo view
+        const dataPayload = new FormData();
+        dataPayload.append("product_id", productId);
+        dataPayload.append("variant_id", variantId);
+        dataPayload.append("quantity", 1);
+
+        // ── 🟢 FIXED: Added leading absolute slash so paths don't break on sub-pages
+        fetch("/product/add-to-wishlist/", {
             method: "POST",
             body: dataPayload,
-            headers: { "X-Requested-With": "XMLHttpRequest" }
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrfToken
+            }
         })
         .then(response => {
-            if (!response.ok) throw new Error("Wishlist pipeline response error.");
+            if (!response.ok) throw new Error("Wishlist pipeline response sync error.");
             return response.json();
         })
         .then(data => {
             if (data.status === "success") {
-                if (targetHeartIcon.classList.contains("bi-heart")) {
-                    targetHeartIcon.className = "bi bi-heart-fill";
-                    targetHeartIcon.style.setProperty("color", "#800020", "important");
-                } else {
-                    targetHeartIcon.className = "bi bi-heart text-muted";
-                    targetHeartIcon.style.color = "";
+                // Target the matching structural layout element counters
+                const cartCounter = document.getElementById("cart-counter");
+                const wishlistCounter = document.getElementById("wishlist-counter");
+
+                if (cartCounter) {
+                    cartCounter.innerText = data.cart_count;
+                    cartCounter.classList.toggle("d-none", parseInt(data.cart_count) === 0);
                 }
 
-                const wishlistCounter = document.getElementById("wishlist-counter");
                 if (wishlistCounter) {
                     wishlistCounter.innerText = data.wishlist_count;
-                    if (data.wishlist_count > 0) {
-                        wishlistCounter.classList.remove("d-none");
-                    } else {
-                        wishlistCounter.classList.add("d-none");
+                    wishlistCounter.classList.toggle("d-none", parseInt(data.wishlist_count) === 0);
+                }
+
+                // Seamlessly transition the heart fill styling states
+                const targetHeartIcon = heartBtn.querySelector("i");
+                if (targetHeartIcon) {
+                    if (data.action === "added") {
+                        targetHeartIcon.className = "bi bi-heart-fill";
+                        targetHeartIcon.style.setProperty("color", "#800020", "important");
+                    } else if (data.action === "removed") {
+                        targetHeartIcon.className = "bi bi-heart text-muted";
+                        targetHeartIcon.style.color = "";
                     }
                 }
             }
         })
-        .catch(err => console.error("Grid heart submission failed:", err));
+        .catch(err => console.error("Grid heart background toggle execution failed:", err));
+    });
+
+    // ========================================================
+    // 🟢 NEW BLOCK 1B: PRODUCT CARD QUICK ADD-TO-CART (EVENT DELEGATION)
+    // ========================================================
+    document.body.addEventListener("click", function (e) {
+        const cartBtn = e.target.closest(".card-add-to-cart-btn");
+        if (!cartBtn) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const productId = cartBtn.getAttribute("data-product-id");
+        const variantId = cartBtn.getAttribute("data-variant-id");
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+        const dataPayload = new FormData();
+        dataPayload.append("product_id", productId);
+        dataPayload.append("variant_id", variantId);
+        dataPayload.append("quantity", 1);
+        dataPayload.append("override_action", "increment");
+
+        const originalHtml = cartBtn.innerHTML;
+        cartBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" style="width: 0.7rem; height: 0.7rem;"></span> Adding...`;
+        cartBtn.disabled = true;
+
+        fetch("/product/add-to-cart/", {
+            method: "POST",
+            body: dataPayload,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrfToken
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Cart pipeline quick transmission rejected.");
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === "success") {
+                const cartCounter = document.getElementById("cart-counter");
+                const wishlistCounter = document.getElementById("wishlist-counter");
+
+                if (cartCounter) {
+                    cartCounter.innerText = data.cart_count;
+                    cartCounter.classList.toggle("d-none", parseInt(data.cart_count) === 0);
+                }
+                if (wishlistCounter) {
+                    wishlistCounter.innerText = data.wishlist_count;
+                    wishlistCounter.classList.toggle("d-none", parseInt(data.wishlist_count) === 0);
+                }
+
+                cartBtn.innerHTML = `<i class="bi bi-check2-all me-1"></i> Added`;
+                cartBtn.className = "btn btn-sm btn-success rounded-0 px-2 py-1 text-uppercase tracking-wider";
+                
+                setTimeout(() => {
+                    cartBtn.innerHTML = originalHtml;
+                    cartBtn.className = "btn btn-sm btn-outline-dark rounded-0 px-2 py-1 text-uppercase tracking-wider card-add-to-cart-btn";
+                    cartBtn.disabled = false;
+                }, 2000);
+            }
+        })
+        .catch(err => {
+            console.error("Quick add execution failed:", err);
+            cartBtn.innerHTML = originalHtml;
+            cartBtn.disabled = false;
+        });
     });
 
     // ========================================================
@@ -109,11 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const wishlistCounter = document.getElementById("wishlist-counter");
                     if (wishlistCounter) {
                         wishlistCounter.innerText = data.wishlist_count;
-                        if (data.wishlist_count > 0) {
-                            wishlistCounter.classList.remove("d-none");
-                        } else {
-                            wishlistCounter.classList.add("d-none");
-                        }
+                        wishlistCounter.classList.toggle("d-none", parseInt(data.wishlist_count) === 0);
                     }
                     
                     const toast = document.getElementById("luxury-notification");
@@ -200,9 +284,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const wishlistCounter = document.getElementById("wishlist-counter");
                 if (wishlistCounter) {
                     wishlistCounter.innerText = data.wishlist_count;
-                    if (data.wishlist_count === 0) {
-                        wishlistCounter.classList.add("d-none");
-                    }
+                    wishlistCounter.classList.toggle("d-none", parseInt(data.wishlist_count) === 0);
                 }
 
                 itemCard.style.transition = "all 0.4s ease";
@@ -319,27 +401,38 @@ document.addEventListener("DOMContentLoaded", function () {
     }   
 
     // ========================================================
-    // BLOCK 7: INSTANT CATEGORY FILTER SWAPPER (AJAX)
+    // 🟢 UPDATED BLOCK 7: INSTANT CATEGORY FILTER SWAPPER (ROUTING-AWARE)
     // ========================================================
-    document.querySelectorAll(".royal-tab-link").forEach(tab => {
+    document.querySelectorAll(".global-category-nav, .royal-tab-link").forEach(tab => {
         tab.addEventListener("click", function(e) {
             e.preventDefault();
-            document.querySelectorAll(".royal-tab-link").forEach(t => t.classList.remove("active"));
             
-            if (this.classList.contains("clear-filters-btn")) {
-                const allTab = document.querySelector('.royal-tab-link[data-category="all"]');
-                if (allTab) allTab.classList.add("active");
-            } else {
-                this.classList.add("active");
-            }
-
             const category = this.getAttribute("data-category");
             const newUrlParams = new URLSearchParams();
-            if (category !== "all") {
+            if (category && category !== "all") {
                 newUrlParams.set("category", category);
             }
 
-            const targetUrl = window.location.pathname + (newUrlParams.toString() ? "?" + newUrlParams.toString() : "");
+            const queryString = newUrlParams.toString() ? "?" + newUrlParams.toString() : "";
+            
+            // If not on home catalog page, force a clean redirect
+            if (window.location.pathname !== "/") {
+                window.location.href = "/" + queryString;
+                return; 
+            }
+
+            // ── 🟢 FIXED: Clear active classes across ALL navbar and filter elements ──
+            document.querySelectorAll(".global-category-nav, .royal-tab-link").forEach(t => {
+                t.classList.remove("active", "text-warning");
+            });
+
+            // Highlight the currently clicked item
+            this.classList.add("active");
+            if (this.classList.contains("global-category-nav")) {
+                this.classList.add("text-warning");
+            }
+
+            const targetUrl = "/" + queryString;
             window.history.pushState({ path: targetUrl }, "", targetUrl);
 
             if (loader) loader.classList.remove("d-none");
@@ -452,7 +545,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ========================================================
-    // 🟢 MOVED INSIDE: BLOCK 10: SHOPPING CART QUANTITY ADJUSTER (AJAX)
+    // BLOCK 10: SHOPPING CART QUANTITY ADJUSTER (AJAX)
     // ========================================================
     document.addEventListener("submit", function(e) {
         const qtyForm = e.target.closest(".ajax-cart-qty-form");
@@ -486,4 +579,4 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch(err => console.error("Quantity modifier execution failed:", err));
     });
 
-}); // 🔒 Safe bracket termination closure
+}); // 🔒 Safe pipeline closure

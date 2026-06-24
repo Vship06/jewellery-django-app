@@ -1,73 +1,108 @@
 {% load custom_filter %}
 
 {% for product in products %}
-    <div class="col animate-fade-in">
-        <div class="card royal-card d-flex flex-column position-relative">
-            
-            <a href="{% url 'product-detail' pk=product.id %}" class="text-decoration-none card-wrapper-link">
-                {% if product.image_link %}
-                    {% with img_list=product.image_link|split_images %}
-                        <div class="img-swap-container {% if img_list|length > 1 %}has-swap{% endif %}">
-                            <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="blended-img primary-img">
-                            {% if img_list|length > 1 %}
-                                <img src="{{ img_list.1 }}" alt="{{ product.name }} Alternate View" class="blended-img secondary-img">
-                            {% endif %}
-                        </div>
-                    {% endwith %}
-                {% endif %}
+<div class="col-12 col-sm-6 col-md-4 col-lg-3 animate-fade-in">
+    <div class="card royal-card d-flex flex-column position-relative h-100">
+
+        <a href="{% url 'product-detail' pk=product.id %}" class="text-decoration-none card-wrapper-link">
+            {% if product.image_link %}
+                {% with img_list=product.image_link|split_images %}
+                    <div class="img-swap-container {% if img_list|length > 1 %}has-swap{% endif %}"
+                         style="height: 240px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 10px;">
+                         
+                        <img src="{{ img_list.0 }}" alt="{{ product.name }}"
+                             class="blended-img primary-img"
+                             style="max-height: 100%; width: 100%; object-fit: contain; padding: 0;">
+                             
+                        {% if img_list|length > 1 %}
+                            <img src="{{ img_list.1 }}" alt="{{ product.name }} Alternate View"
+                                 class="blended-img secondary-img"
+                                 style="max-height: 100%; width: 100%; object-fit: contain; padding: 0;">
+                        {% endif %}
+                    </div>
+                {% endwith %}
+            {% endif %}
+        </a>
+
+        <div class="card-body d-flex flex-column justify-content-between p-3 flex-grow-1">
+
+            <a href="{% url 'product-detail' pk=product.id %}" class="text-decoration-none text-dark-neutral">
+                <div class="text-center">
+                    <small class="text-uppercase fw-bold d-block mb-1" style="color: var(--royal-gold); letter-spacing: 1.5px; font-size: 0.65rem;">
+                        {{ product.get_category_display }}
+                    </small>
+                    <h6 class="card-title mb-1" style="line-height: 1.35; color: #1a1a1a; font-weight: 500; font-size: 0.9rem;">
+                        {{ product.name }}
+                    </h6>
+                    <p class="text-muted mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        {{ product.variants.all.0.metal_type|default:"Fine Jewelry" }}
+                    </p>
+                    <p class="luxury-price mb-0" style="font-size: 1rem;">
+                        {% if product.matched_price %}
+                            Rs. {{ product.matched_price|floatformat:2 }}
+                        {% elif product.variants.all %}
+                            Rs. {{ product.variants.all.0.price|floatformat:2 }}
+                        {% else %}
+                            <span class="text-muted fst-italic" style="font-size: 0.85rem;">Price Upon Request</span>
+                        {% endif %}
+                    </p>
+                </div>
             </a>
 
-            <div class="card-body d-flex flex-column justify-content-between p-4 flex-grow-1">
+            <div class="d-flex align-items-center justify-content-between pt-2 mt-2 gap-2"
+                 style="border-top: 1px dashed var(--border-color) !important;">
                 
-                <a href="{% url 'product-detail' pk=product.id %}" class="text-decoration-none text-dark-neutral">
-                    <div class="text-center">
-                        <small class="text-uppercase fw-bold" style="color: var(--royal-gold); letter-spacing: 2px; font-size: 0.75rem;">
-                            {{ product.category|default:"Luxury Jewelry" }}
-                        </small>
-                        <h5 class="card-title mt-3 mb-1" style="line-height: 1.4; color: #1a1a1a; font-weight: 500;">
-                            {{ product.name }}
-                        </h5>
-                        
-                        <p class="text-muted small mb-2 text-uppercase" style="letter-spacing: 1px; font-size: 0.75rem;">
-                            {{ product.variants.all.0.metal_type|default:"18k Fine Jewelry" }}
-                        </p>
-                        
-                        <p class="luxury-price mb-4">
-                            {% if product.variants.all %}
-                                Rs. {{ product.variants.all.0.price|floatformat:2 }}
-                            {% else %}
-                                <span class="text-muted fst-italic" style="font-size: 0.9rem;">Price Upon Request</span>
-                            {% endif %}
-                        </p>
-                    </div>
-                </a>
-                
-                <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px dashed var(--border-color); z-index: 5; position: relative;">
-                    <p class="text-muted mb-0" style="font-family: monospace; font-size: 0.85rem;">
-                        REF: {{ product.sku }}
-                    </p>
+                <p class="text-muted mb-0 font-monospace" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                    {{ product.sku }}
+                </p>
+
+                <div class="d-flex align-items-center gap-2">
                     
-                    <form class="wishlist-toggle-form m-0" action="{% url 'product-add-wishlist' %}" method="POST">
-                        {% csrf_token %}
-                        <input type="hidden" name="product_id" value="{{ product.id }}">
-                        <input type="hidden" name="variant_id" value="{{ product.variants.first.id }}">
-                        <input type="hidden" name="type" value="wishlist">
-                        
-                        <button type="submit" class="btn p-2 wishlist-heart-btn" aria-label="Toggle Wishlist Layout">
+                    {% comment %} {% if product.variants.all %}
+                        <button type="button" 
+                                class="btn btn-sm btn-outline-dark rounded-0 px-2 py-1 text-uppercase tracking-wider card-add-to-cart-btn"
+                                data-product-id="{{ product.id }}"
+                                data-variant-id="{{ product.variants.first.id }}"
+                                style="font-size: 0.65rem; font-weight: 500; letter-spacing: 1px; height: 28px; display: flex; align-items: center; border-color: #333; color: #333;">
+                            <i class="bi bi-bag-plus me-1" style="font-size: 0.8rem;"></i> Add to Cart
+                        </button>
+                    {% else %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-0 px-2 py-1 text-uppercase disabled" style="font-size: 0.65rem; height: 28px;" disabled>
+                            Out of Stock
+                        </button>
+                    {% endif %} {% endcomment %}
+
+                    {% if request.user.is_authenticated %}
+                        <button type="button"
+                                class="btn p-1 card-wishlist-btn"
+                                data-product-id="{{ product.id }}"
+                                data-variant-id="{{ product.variants.first.id }}"
+                                aria-label="Toggle Wishlist"
+                                style="height: 28px; display: flex; align-items: center; justify-content: center;">
                             {% if product.id in user_wishlist_ids %}
-                                <i class="bi bi-heart-fill" style="color: #800020; font-size: 1.2rem;"></i>
+                                <i class="bi bi-heart-fill" style="color: #800020; font-size: 1rem;"></i>
                             {% else %}
-                                <i class="bi bi-heart text-muted" style="font-size: 1.2rem;"></i>
+                                <i class="bi bi-heart text-muted" style="font-size: 1rem;"></i>
                             {% endif %}
                         </button>
-                    </form>
-                </div>
+                    {% else %}
+                        <a href="{% url 'user-login' %}?next={{ request.path }}"
+                           class="btn p-1"
+                           aria-label="Sign in to add to Wishlist"
+                           title="Sign in to save to wishlist"
+                           style="height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-heart text-muted" style="font-size: 1rem; opacity: 0.45;"></i>
+                        </a>
+                    {% endif %}
 
+                </div>
             </div>
+
         </div>
     </div>
+</div>
 {% empty %}
-    <div class="col-12 text-center py-5">
-        <p class="fst-italic text-muted">No jewelry assets found in your database configuration.</p>
-    </div>
+<div class="col-12 text-center py-5">
+    <p class="fst-italic text-muted small">No pieces found matching your selection.</p>
+</div>
 {% endfor %}

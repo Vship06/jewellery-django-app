@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView
-from django.db.models import Q
+from django.db.models import Q, Min, Max
 from .models import Product, ProductVariant, CartItem
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -14,7 +14,7 @@ class ProductListView(ListView):
     model = Product
     template_name = "products/home.html"
     context_object_name = "products"
-    paginate_by = 15
+    paginate_by = 16
 
     def get_queryset(self):
         queryset = Product.objects.all().order_by("-created_at")
@@ -29,13 +29,57 @@ class ProductListView(ListView):
             queryset = queryset.filter(
                 Q(name__icontains=query_text) | Q(category__icontains=query_text)
             )
-        return queryset
+
+        price_min = self.request.GET.get("price_min")
+        price_max = self.request.GET.get("price_max")
+
+        variant_filter = Q()
+
+        if price_min:
+            queryset = queryset.filter(variants__price__gte=price_min)
+            variant_filter &= Q(variants__price__gte=price_min)
+
+        if price_max:
+            queryset = queryset.filter(variants__price__lte=price_max)
+            variant_filter &= Q(variants__price__lte=price_max)
+
+        queryset = queryset.annotate(
+            matched_price=Min("variants__price", filter=variant_filter)
+        )
+
+        metal_type = self.request.GET.getlist("metal")
+
+        if metal_type:
+            queryset = queryset.filter(variants__base_metal__in=metal_type)
+
+        purities = self.request.GET.getlist("purity")
+        if purities:
+            queryset = queryset.filter(variants__purity__in=purities)
+
+        mcolors = self.request.GET.getlist("mcolor")
+        if mcolors:
+            queryset = queryset.filter(variants__metal_color__in=mcolors)
+
+        if self.request.GET.get("diamonds") == "1":
+
+            queryset = queryset.exclude(variants__diamond_carat__isnull=True).exclude(
+                variants__diamond_carat=""
+            )
+
+        clarity = self.request.GET.getlist("clarity")
+        if clarity:
+            queryset = queryset.filter(variants__diamond_clarity__in=clarity)
+
+        color = self.request.GET.getlist("dcolor")
+        if color:
+            queryset = queryset.filter(variants__diamond_color__in=color)
+
+        return queryset.distinct()
 
     def render_to_response(self, context, **response_kwargs):
-
         if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
             html_markup = render_to_string(
-                "products/partial.html", context, request=self.request
+                "products/partial.html", context=context, request=self.request
             )
             return JsonResponse(
                 {
@@ -47,14 +91,76 @@ class ProductListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         context["categories"] = Product.objects.values_list(
             "category", flat=True
         ).distinct()
 
-        current_category = self.request.GET.get("category", "all")
-        context["selected_categories"] = (
-            [current_category] if current_category != "all" else []
+        variants_qs = ProductVariant.objects.all()
+
+        context["available_metals"] = list(
+            variants_qs.values_list("base_metal", flat=True)
+            .exclude(base_metal__isnull=True)
+            .exclude(base_metal="")
+            .distinct()
         )
+        context["available_colors"] = list(
+            variants_qs.values_list("metal_color", flat=True)
+            .exclude(metal_color__isnull=True)
+            .exclude(metal_color="")
+            .distinct()
+        )
+        context["available_purities"] = list(
+            variants_qs.values_list("purity", flat=True)
+            .exclude(purity__isnull=True)
+            .exclude(purity="")
+            .distinct()
+        )
+        context["available_clarities"] = list(
+            variants_qs.values_list("diamond_clarity", flat=True)
+            .exclude(diamond_clarity__isnull=True)
+            .exclude(diamond_clarity="")
+            .distinct()
+        )
+        context["available_colors_d"] = list(
+            variants_qs.values_list("diamond_color", flat=True)
+            .exclude(diamond_color__isnull=True)
+            .exclude(diamond_color="")
+            .distinct()
+        )
+
+        price_bounds = ProductVariant.objects.aggregate(
+            absolute_min=Min("price", default=0),
+            absolute_max=Max("price", default=1000000),
+        )
+
+        db_min = 0
+        db_max = int(price_bounds["absolute_max"])
+
+        context["db_price_min"] = db_min
+        context["db_price_max"] = db_max
+
+        # Selected query tracking (to keep options checked on page refresh)
+        context["selected_metals"] = self.request.GET.getlist("metal")
+        context["selected_colors"] = self.request.GET.getlist("mcolor")
+        context["selected_purities"] = self.request.GET.getlist("purity")
+        context["selected_clarities"] = self.request.GET.getlist("clarity")
+        context["selected_dcolors"] = self.request.GET.getlist("dcolor")
+
+        context["current_price_min"] = int(self.request.GET.get("price_min", db_min))
+        context["current_price_max"] = int(self.request.GET.get("price_max", db_max))
+
+        context["has_diamonds"] = self.request.GET.get("diamonds")
+
+        if self.request.user.is_authenticated:
+            context["user_wishlist_ids"] = list(
+                CartItem.objects.filter(
+                    user=self.request.user, status="wishlist"
+                ).values_list("product_id", flat=True)
+            )
+        else:
+            context["user_wishlist_ids"] = []
+
         return context
 
 
@@ -90,8 +196,8 @@ def CartView(request, type):
     return render(request, template, context)
 
 
-@require_POST
 @login_required
+@require_POST
 def AddTo(request, type):
     product_id = request.POST.get("product_id")
     variant_id = request.POST.get("variant_id")
@@ -127,14 +233,20 @@ def AddTo(request, type):
                 existing_item.save()
 
         elif type == "wishlist":
+            existing_item.delete()
+            total_cart_count = sum(
+                item.quantity for item in request.user.cart_items.filter(status="cart")
+            )
+            total_wishlist_count = request.user.cart_items.filter(
+                status="wishlist"
+            ).count()
             return JsonResponse(
                 {
                     "status": "success",
-                    "action": "exists",
-                    "wishlist_count": request.user.cart_items.filter(
-                        status="wishlist"
-                    ).count(),
-                    "message": "Item already preserved in wishlist.",
+                    "action": "removed",
+                    "cart_count": total_cart_count,
+                    "wishlist_count": total_wishlist_count,
+                    "message": "Item successfully removed from your wishlist.",
                 }
             )
     else:
