@@ -4,455 +4,368 @@
 {% block title %}The Royal Collection | Aurora{% endblock %}
 
 {% block content %}
+    <div class="container pt-2 pb-2">
+        <div class="d-flex align-items-center justify-content-between mb-4 px-1 animate-fade-in">
+            <h1 class="luxury-page-title m-0">The Royal Collection</h1>
+            
+            <div class="d-flex gap-3">
+                <button class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest" type="button" 
+                        data-bs-toggle="offcanvas" data-bs-target="#filterMenu" aria-controls="filterMenu" 
+                        style="font-size: 0.75rem; letter-spacing: 2px; white-space: nowrap; border: 1px solid #222; height: var(--btn-height-md);">
+                    <i class="bi bi-sliders me-2"></i> Filter
+                </button>
 
-<div class="d-flex align-items-center justify-content-between mb-4 mt-2 px-1">
-    <h2 class="luxury-title m-0" style="font-family: 'Playfair Display', serif; font-size: 1.4rem; letter-spacing: 3px; font-weight: 400;">The Royal Collection</h2>
-    <button class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest" type="button" 
-            data-bs-toggle="offcanvas" data-bs-target="#filterMenu" aria-controls="filterMenu" 
-            style="font-size: 0.75rem; letter-spacing: 2px; white-space: nowrap; border: 1px solid #222;">
-        <i class="bi bi-sliders me-2"></i> Filter & Refine
-    </button>
-</div>
-
-<div id="product-display-container" class="container-fluid px-0 mb-5">
-    <div class="row g-4" id="infinite-products-grid">
-        {% include "products/partial.html" %}
-    </div>
-    
-                <div id="scroll-sentinel" class="text-center py-4 mt-4" 
-                    data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}none{% endif %}">
-                    <button id="load-more-btn" 
-                            class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest {% if not page_obj.has_next %}d-none{% endif %}" 
-                            style="font-size: 0.75rem; letter-spacing: 1.5px;">
-                        View More
+                <div class="dropdown">
+                    <button class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest dropdown-toggle" 
+                            type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                            style="font-size: 0.75rem; letter-spacing: 2px; white-space: nowrap; border: 1px solid #222; height: var(--btn-height-md);">
+                        <i class="bi bi-sort-down me-2"></i> 
+                        {% if request.GET.sort == 'descending' %}
+                            Price: High to Low
+                        {% elif request.GET.sort == 'ascending' %}
+                            Price: Low to High
+                        {% else %}
+                            Sort
+                        {% endif %}
                     </button>
-                    <div class="spinner-border text-dark d-none" role="status" id="infinite-loader" style="width: 1.5rem; height: 1.5rem;"></div>
+                    <ul class="dropdown-menu dropdown-menu-end rounded-0 border-dark m-0 p-0" style="font-size: 0.75rem; letter-spacing: 1px;">
+                        <li>
+                            <a class="dropdown-item py-2.5 text-uppercase {% if not request.GET.sort %}active bg-dark{% endif %}" 
+                               href="javascript:void(0);" onclick="applySort('')">
+                                Default Sorting
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider m-0"></li>
+                        <li>
+                            <a class="dropdown-item py-2.5 text-uppercase {% if request.GET.sort == 'descending' %}active bg-dark{% endif %}" 
+                               href="javascript:void(0);" onclick="applySort('descending')">
+                                Price: High to Low
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2.5 text-uppercase {% if request.GET.sort == 'ascending' %}active bg-dark{% endif %}" 
+                               href="javascript:void(0);" onclick="applySort('ascending')">
+                                Price: Low to High
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-
-            <div class="offcanvas offcanvas-end border-0 rounded-0" tabindex="-1" id="filterMenu" aria-labelledby="filterMenuLabel" style="width: 380px;">
-                <div class="offcanvas-header border-bottom px-4 pt-4 pb-3">
-                    <h5 class="offcanvas-title font-serif text-uppercase tracking-widest" id="filterMenuLabel" style="font-size: 1.05rem; letter-spacing: 2px;">Refine Collection</h5>
-                    <button type="button" class="btn-close shadow-none text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                </div>
-                
-                <div class="offcanvas-body px-4">
-                    <form id="catalog-filter-form">
-
-                       
-            <!-- Refined Dynamic Dual-Price Slider Section -->
-            <div class="mb-4">
-                <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Price Range (Rs.)</h6>
-                
-                <div class="d-flex align-items-center justify-content-between mb-3 gap-2 font-serif">
-                    <div class="input-group input-group-sm" style="max-width: 140px;">
-                        <span class="input-group-text bg-transparent border-end-0 text-muted small p-2" style="font-size: 0.75rem;">Min</span>
-                        <input type="number" id="price-input-min" name="price_min"
-                            min="0" max="{{ db_price_max }}" 
-                            value="{{ current_price_min }}" 
-                            class="form-control rounded-0 border-start-0 text-center shadow-none" 
-                            style="font-size: 0.85rem; border-color: #dee2e6;">
-                    </div>
-                    
-                    <span class="text-muted small">—</span>
-                    
-                    <div class="input-group input-group-sm" style="max-width: 140px;">
-                        <span class="input-group-text bg-transparent border-end-0 text-muted small p-2" style="font-size: 0.75rem;">Max</span>
-                        <input type="number" id="price-input-max" name="price_max"
-                            min="0" max="{{ db_price_max }}" 
-                            value="{{ current_price_max }}" 
-                            class="form-control rounded-0 border-start-0 text-center shadow-none" 
-                            style="font-size: 0.85rem; border-color: #dee2e6;">
-                    </div>
-                </div>
-
-                <div class="position-relative price-slider-wrapper" style="height: 25px;">
-                    <input type="range" id="price-slider-min"
-                        min="0" max="{{ db_price_max }}" step="1000"
-                        value="{{ current_price_min }}" 
-                        class="position-absolute w-100 current-slider-input shadow-none">
-                        
-                    <input type="range" id="price-slider-max"
-                        min="0" max="{{ db_price_max }}" step="1000"
-                        value="{{ current_price_max }}" 
-                        class="position-absolute w-100 current-slider-input shadow-none">
-                </div>
-            </div>
-
-            <hr class="my-4" style="border-color: rgba(0,0,0,0.08);">
-
-            <div class="mb-4">
-                <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Base Metal</h6>
-                {% for metal in available_metals %}
-                    <div class="form-check mb-2">
-                        <input class="form-check-input rounded-0 shadow-none" type="checkbox" 
-                               name="metal" value="{{ metal }}" id="m_{{ forloop.counter }}"
-                               {% if metal in selected_metals %}checked{% endif %}>
-                        <label class="form-check-label font-serif" for="m_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ metal }}</label>
-                    </div>
-                {% empty %}
-                    <p class="text-muted small font-serif italic">No metal parameters logged.</p>
-                {% endfor %}
-            </div>
-
-            <div class="mb-4">
-                <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Metal Purity</h6>
-                {% for purity in available_purities %}
-                    <div class="form-check mb-2">
-                        <input class="form-check-input rounded-0 shadow-none" type="checkbox" 
-                               name="purity" value="{{ purity }}" id="p_{{ forloop.counter }}"
-                               {% if purity in selected_purities %}checked{% endif %}>
-                        <label class="form-check-label font-serif" for="p_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ purity }}</label>
-                    </div>
-                {% empty %}
-                    <p class="text-muted small font-serif italic">No purities cataloged.</p>
-                {% endfor %}
-            </div>
-
-            <div class="mb-4">
-                <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Metal Tone</h6>
-                {% for color in available_colors %}
-                    <div class="form-check mb-2">
-                        <input class="form-check-input rounded-0 shadow-none" type="checkbox" 
-                               name="mcolor" value="{{ color }}" id="c_{{ forloop.counter }}"
-                               {% if color in selected_colors %}checked{% endif %}>
-                        <label class="form-check-label font-serif" for="c_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ color }}</label>
-                    </div>
-                {% empty %}
-                    <p class="text-muted small font-serif italic">No color tones cataloged.</p>
-                {% endfor %}
-            </div>
-
-            <hr class="my-4" style="border-color: rgba(0,0,0,0.08);">
-
-            <div class="mb-3">
-                <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Gemstones</h6>
-                <div class="form-check form-switch mb-3">
-                    <input class="form-check-input shadow-none" type="checkbox" 
-                           name="diamonds" value="1" id="hasDiamonds"
-                           {% if has_diamonds == "1" %}checked{% endif %}>
-                    <label class="form-check-label font-serif" for="hasDiamonds" style="font-size: 0.9rem; color: #111;">Includes Diamonds</label>
-                </div>
-            </div>
-
-           <div id="diamond-details-section" style="display: none; padding-left: 0.75rem; border-left: 2px solid #d4af37;">
-                            
-                <div class="mb-4">
-                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Diamond Clarity</h6>
-                    {% for clarity in available_clarities %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" 
-                                   name="clarity" value="{{ clarity }}" id="cl_{{ forloop.counter }}"
-                                   {% if clarity in selected_clarities %}checked{% endif %}>
-                            <label class="form-check-label font-serif" for="cl_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ clarity }}</label>
-                        </div>
-                    {% endfor %}
-                </div>
-
-                <div class="mb-4">
-                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Diamond Color</h6>
-                    {% for dcol in available_colors_d %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" 
-                                   name="dcolor" value="{{ dcol }}" id="dc_{{ forloop.counter }}"
-                                   {% if dcol in selected_dcolors %}checked{% endif %}>
-                            <label class="form-check-label font-serif" for="dc_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ dcol }}</label>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="mt-5 mb-3 d-grid gap-2">
-                <button type="submit" class="btn btn-dark rounded-0 py-3 text-uppercase tracking-widest" 
-                        style="font-size: 0.8rem; background-color: #222; border: none; letter-spacing: 2px;">
-                    Apply Filters
-                </button>
-                <button type="button" id="clear-filters-btn" 
-                        class="btn btn-outline-secondary rounded-0 py-2 text-uppercase tracking-widest text-muted border-0" 
-                        style="font-size: 0.7rem; letter-spacing: 1px;">
-                    Clear All
-                </button>
-            </div>
-
-        </form>
+        </div>
     </div>
-</div>
+
+    <div class="container mb-5">
+        <div class="row g-4" id="infinite-products-grid">
+            {% include "products/partial.html" %}
+        </div>
+    
+        <div id="scroll-sentinel" class="text-center py-4 mt-2" 
+            data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}none{% endif %}">
+            <button id="load-more-btn" 
+                    class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest {% if not page_obj.has_next %}d-none{% endif %}" 
+                    style="font-size: 0.75rem; letter-spacing: 1.5px; height: var(--btn-height-md);">
+                View More
+            </button>
+            <div class="spinner-border text-dark d-none" role="status" id="infinite-loader" style="width: 1.5rem; height: 1.5rem;"></div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end border-0 rounded-0" tabindex="-1" id="filterMenu" aria-labelledby="filterMenuLabel" style="width: 380px;">
+        <div class="offcanvas-header border-bottom px-4 pt-4 pb-3">
+            <h5 class="offcanvas-title font-serif text-uppercase tracking-widest" id="filterMenuLabel" style="font-size: 1.05rem; letter-spacing: 2px;">Refine Collection</h5>
+            <button type="button" class="btn-close shadow-none text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        
+        <div class="offcanvas-body px-4">
+            <form id="catalog-filter-form">
+                <input type="hidden" id="hidden-sort-input" name="sort" value="{{ request.GET.sort|default:'' }}">
+
+                <div class="mb-4">
+                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Price Range (Rs.)</h6>
+                    <div class="d-flex align-items-center justify-content-between mb-3 gap-2 font-serif">
+                        <div class="input-group input-group-sm" style="max-width: 140px;">
+                            <span class="input-group-text bg-transparent border-end-0 text-muted small p-2" style="font-size: 0.75rem;">Min</span>
+                            <input type="number" id="price-input-min" name="price_min" min="0" max="{{ db_price_max }}" value="{{ current_price_min }}" class="form-control rounded-0 border-start-0 text-center shadow-none" style="font-size: 0.85rem; border-color: #dee2e6;">
+                        </div>
+                        <span class="text-muted small">—</span>
+                        <div class="input-group input-group-sm" style="max-width: 140px;">
+                            <span class="input-group-text bg-transparent border-end-0 text-muted small p-2" style="font-size: 0.75rem;">Max</span>
+                            <input type="number" id="price-input-max" name="price_max" min="0" max="{{ db_price_max }}" value="{{ current_price_max }}" class="form-control rounded-0 border-start-0 text-center shadow-none" style="font-size: 0.85rem; border-color: #dee2e6;">
+                        </div>
+                    </div>
+                    <div class="position-relative price-slider-wrapper" style="height: 25px;">
+                        <input type="range" id="price-slider-min" min="0" max="{{ db_price_max }}" step="1000" value="{{ current_price_min }}" class="position-absolute w-100 current-slider-input shadow-none">
+                        <input type="range" id="price-slider-max" min="0" max="{{ db_price_max }}" step="1000" value="{{ current_price_max }}" class="position-absolute w-100 current-slider-input shadow-none">
+                    </div>
+                </div>
+
+                <hr class="my-4" style="border-color: rgba(0,0,0,0.08);">
+
+                <!-- Sub Collection Section (FIXED: Structure block containment closed securely) -->
+                <div class="mb-4">
+                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Sub Collection</h6>
+                    {% for sub in available_sub_collection|slice:":3" %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="sub" value="{{ sub }}" id="sub_{{ forloop.counter }}" {% if sub in selected_sub_collection %}checked{% endif %}>
+                            <label class="form-check-label font-serif" for="sub_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ sub }}</label>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small font-serif italic">No collection available.</p>
+                    {% endfor %}
+
+                    {% if available_sub_collection|length > 3 %}
+                        <div class="collapse" id="moreSubCollectionsCollapse">
+                            {% for sub in available_sub_collection|slice:"3:" %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="sub" value="{{ sub }}" id="sub_{{ forloop.counter|add:3 }}" {% if sub in selected_sub_collection %}checked{% endif %}>
+                                    <label class="form-check-label font-serif" for="sub_{{ forloop.counter|add:3 }}" style="font-size: 0.9rem; color: #333;">{{ sub }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <a class="d-inline-block text-uppercase tracking-wider font-serif text-decoration-none mt-2 collapsed view-more-sub-link" 
+                           data-bs-toggle="collapse" 
+                           href="#moreSubCollectionsCollapse" 
+                           role="button" 
+                           aria-expanded="false" 
+                           aria-controls="moreSubCollectionsCollapse"
+                           style="font-size: 0.7rem; font-weight: 600; color: var(--luxury-burgundy, #800020); letter-spacing: 1px;">
+                            <span class="view-text-show">+ View More Collections</span>
+                       
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Base Metal</h6>
+                    {% for metal in available_metals %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="metal" value="{{ metal }}" id="m_{{ forloop.counter }}" {% if metal in selected_metals %}checked{% endif %}>
+                            <label class="form-check-label font-serif" for="m_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ metal }}</label>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small font-serif italic">No metal parameters logged.</p>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Metal Purity</h6>
+                    {% for purity in available_purities %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="purity" value="{{ purity }}" id="p_{{ forloop.counter }}" {% if purity in selected_purities %}checked{% endif %}>
+                            <label class="form-check-label font-serif" for="p_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ purity }}</label>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small font-serif italic">No purities cataloged.</p>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Metal Tone</h6>
+                    {% for color in available_colors %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="mcolor" value="{{ color }}" id="c_{{ forloop.counter }}" {% if color in selected_colors %}checked{% endif %}>
+                            <label class="form-check-label font-serif" for="c_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ color }}</label>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small font-serif italic">No color tones cataloged.</p>
+                    {% endfor %}
+                </div>
+
+                <hr class="my-4" style="border-color: rgba(0,0,0,0.08);">
+
+                <div class="mb-3">
+                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Gemstones</h6>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input shadow-none" type="checkbox" name="diamonds" value="1" id="hasDiamonds" {% if has_diamonds == "1" %}checked{% endif %}>
+                        <label class="form-check-label font-serif" for="hasDiamonds" style="font-size: 0.9rem; color: #111;">Includes Diamonds</label>
+                    </div>
+                </div>
+
+                <div id="diamond-details-section" style="{% if has_diamonds == '1' %}display: block;{% else %}display: none;{% endif %} padding-left: 0.75rem; border-left: 2px solid #d4af37;">
+                    <div class="mb-4">
+                        <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Diamond Clarity</h6>
+                        {% for clarity in available_clarities %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="clarity" value="{{ clarity }}" id="cl_{{ forloop.counter }}" {% if clarity in selected_clarities %}checked{% endif %}>
+                                <label class="form-check-label font-serif" for="cl_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ clarity }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Diamond Color</h6>
+                        {% for dcol in available_colors_d %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="dcolor" value="{{ dcol }}" id="dc_{{ forloop.counter }}" {% if dcol in selected_dcolors %}checked{% endif %}>
+                                <label class="form-check-label font-serif" for="dc_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ dcol }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mt-5 mb-3 d-grid gap-2">
+                    <button type="submit" class="btn btn-dark rounded-0 py-3 text-uppercase tracking-widest" style="font-size: 0.8rem; background-color: #222; border: none; letter-spacing: 2px;">Apply Filters</button>
+                    <button type="button" id="clear-filters-btn" class="btn btn-outline-secondary rounded-0 py-2 text-uppercase tracking-widest text-muted border-0" style="font-size: 0.7rem; letter-spacing: 1px;">Clear All</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 {% csrf_token %}
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-
     const sliderMin = document.getElementById('price-slider-min');
     const sliderMax = document.getElementById('price-slider-max');
     const inputMin  = document.getElementById('price-input-min');
     const inputMax  = document.getElementById('price-input-max');
-
-    if (sliderMin && sliderMax && inputMin && inputMax) {
-        // 🟢 REPLACE WITH THIS DYNAMIC CLEARANCE CONTROLLER:
-    function getDynamicClearance() {
-        let currentMax = parseInt(sliderMax.value) || 0;
-        // If filtering low-end budgets under 50k, allow a tiny 1,000 Rs gap.
-        // Otherwise, use a standard 5,000 Rs gap for high-end scrolling stability.
-        return currentMax < 50000 ? 1000 : 5000;
-    }
-        const absoluteFloor = parseInt(sliderMin.min);
-        const absoluteCeiling = parseInt(sliderMax.max);
-
-        // ── TRACKING DIRECTION 1: Slider Moves -> Update Number Inputs ──
-        // ── TRACKING DIRECTION 1: Slider Moves ──
-    function syncSliderToInput() {
-        let minVal = parseInt(sliderMin.value);
-        let maxVal = parseInt(sliderMax.value);
-        const handleClearance = getDynamicClearance(); // 🟢 Read clearance on the fly
-
-        if (minVal >= maxVal) {
-            minVal = Math.max(absoluteFloor, maxVal - handleClearance);
-            sliderMin.value = minVal;
-        }
-        if (maxVal <= absoluteFloor + handleClearance) {
-            sliderMax.value = absoluteFloor + handleClearance;
-            maxVal = absoluteFloor + handleClearance;
-            minVal = absoluteFloor;
-            sliderMin.value = minVal;
-        }
-
-        inputMin.value = minVal;
-        inputMax.value = maxVal;
-    }
-
-    // ── TRACKING DIRECTION 2: Typing Numbers ──
-    function syncInputToSlider() {
-        let minVal = parseInt(inputMin.value) || absoluteFloor;
-        let maxVal = parseInt(inputMax.value) || absoluteCeiling;
-        const handleClearance = getDynamicClearance(); // 🟢 Read clearance on the fly
-
-        // Enforce bounds constraints so typing can't break ranges
-        if (minVal < absoluteFloor) minVal = absoluteFloor;
-        if (maxVal > absoluteCeiling) maxVal = absoluteCeiling;
-
-        if (minVal >= maxVal - handleClearance) {
-            if (this === inputMin) {
-                minVal = Math.min(maxVal - handleClearance, absoluteCeiling - handleClearance);
-                inputMin.value = minVal;
-            } else {
-                maxVal = Math.max(minVal + handleClearance, absoluteFloor + handleClearance);
-                inputMax.value = maxVal;
-            }
-        }
-
-        sliderMin.value = minVal;
-        sliderMax.value = maxVal;
-    }
-
-        // Event Listeners for Sliders
-       // 🟢 Change this specific slice at the bottom of your slider script setup:
-        sliderMin.addEventListener('input', syncSliderToInput);
-        sliderMax.addEventListener('input', syncSliderToInput);
-
-        // Waits until user hits Enter or clicks away to process typed values smoothly
-        inputMin.addEventListener('change', syncInputToSlider);
-        inputMax.addEventListener('change', syncInputToSlider);
-    }
-
+    const filterForm = document.getElementById('catalog-filter-form');
     const productsGrid = document.getElementById("infinite-products-grid");
     const sentinel     = document.getElementById("scroll-sentinel");
     const loadMoreBtn  = document.getElementById("load-more-btn");
     const loader       = document.getElementById("infinite-loader");
 
-    function updateGrid(data) {
-        if (productsGrid) {
-            productsGrid.innerHTML = data.html;
-            productsGrid.style.opacity = "1";
+    if (sliderMin && sliderMax && inputMin && inputMax) {
+        function getDynamicClearance() {
+            let currentMax = parseInt(sliderMax.value) || 0;
+            return currentMax < 50000 ? 1000 : 5000;
         }
-        if (sentinel) {
-            sentinel.setAttribute("data-next-page", data.has_next ? "2" : "none");
-            loadMoreBtn?.classList.toggle("d-none", !data.has_next);
+        const absoluteFloor = parseInt(sliderMin.min);
+        const absoluteCeiling = parseInt(sliderMax.max);
+
+        function syncSliderToInput() {
+            let minVal = parseInt(sliderMin.value);
+            let maxVal = parseInt(sliderMax.value);
+            const handleClearance = getDynamicClearance();
+            if (minVal >= maxVal) { minVal = Math.max(absoluteFloor, maxVal - handleClearance); sliderMin.value = minVal; }
+            if (maxVal <= absoluteFloor + handleClearance) { sliderMax.value = absoluteFloor + handleClearance; maxVal = absoluteFloor + handleClearance; minVal = absoluteFloor; sliderMin.value = minVal; }
+            inputMin.value = minVal; inputMax.value = maxVal;
         }
-        if (loader) loader.classList.add("d-none");
-    }
 
-    function startLoading() {
-        if (productsGrid) productsGrid.style.opacity = "0.4";
-        if (loader) loader.classList.remove("d-none");
-        if (loadMoreBtn) loadMoreBtn.classList.add("d-none");
-    }
-
-    // 1. Wishlist heart AJAX
-    document.body.addEventListener("click", function(event) {
-        const heartBtn = event.target.closest('.card-wishlist-btn');
-        if (!heartBtn) return;
-        event.preventDefault();
-
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-        const formData = new FormData();
-        formData.append('product_id', heartBtn.getAttribute('data-product-id'));
-        formData.append('variant_id', heartBtn.getAttribute('data-variant-id'));
-        formData.append('quantity', 1);
-
-        fetch('/add-to-wishlist/', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status !== "success") return;
-            
-            // Sync counts globally across layout badges
-            const cartBadge = document.getElementById('cart-counter');
-            const wishBadge = document.getElementById('wishlist-counter');
-            if (cartBadge) { cartBadge.innerText = data.cart_count; cartBadge.classList.toggle('d-none', parseInt(data.cart_count) === 0); }
-            if (wishBadge) { wishBadge.innerText = data.wishlist_count; wishBadge.classList.toggle('d-none', parseInt(data.wishlist_count) === 0); }
-            
-            const icon = heartBtn.querySelector('i');
-            if (icon) {
-                // 🟢 FIXED: Explicitly handle both state tracks precisely
-                if (data.action === "added") {
-                    icon.className = "bi bi-heart-fill";
-                    icon.style.setProperty("color", "#800020", "important");
-                } else if (data.action === "removed") {
-                    icon.className = "bi bi-heart text-muted";
-                    icon.style.color = '';
-                }
+        function syncInputToSlider() {
+            let minVal = parseInt(inputMin.value) || absoluteFloor;
+            let maxVal = parseInt(inputMax.value) || absoluteCeiling;
+            const handleClearance = getDynamicClearance();
+            if (minVal < absoluteFloor) minVal = absoluteFloor; if (maxVal > absoluteCeiling) maxVal = absoluteCeiling;
+            if (minVal >= maxVal - handleClearance) {
+                if (this === inputMin) { minVal = Math.min(maxVal - handleClearance, absoluteCeiling - handleClearance); inputMin.value = minVal; }
+                else { maxVal = Math.max(minVal + handleClearance, absoluteFloor + handleClearance); inputMax.value = maxVal; }
             }
-        });
-    });
+            sliderMin.value = minVal; sliderMax.value = maxVal;
+        }
+        sliderMin.addEventListener('input', syncSliderToInput); sliderMax.addEventListener('input', syncSliderToInput);
+        inputMin.addEventListener('change', syncInputToSlider); inputMax.addEventListener('change', syncInputToSlider);
+    }
 
-    // 2. Navbar category tabs
+    // 2. Navbar Category Tabs (Overriding external default to keep active filters in sync)
     document.querySelectorAll(".global-category-nav").forEach(tab => {
         tab.addEventListener("click", function(e) {
             e.preventDefault();
-            document.querySelectorAll(".global-category-nav").forEach(t => t.classList.remove("active"));
-            this.classList.add("active");
+            e.stopImmediatePropagation();
 
-            const category = this.getAttribute("data-category");
-            const params = new URLSearchParams(window.location.search);
-            if (category === "all") { params.delete("category"); } else { params.set("category", category); }
+            document.querySelectorAll(".global-category-nav").forEach(t => {
+                t.classList.remove("active", "text-warning");
+            });
+            this.classList.add("active", "text-warning");
+
+            const selectedCategory = this.getAttribute("data-category");
+            const params = new URLSearchParams();
+
+            if (filterForm) {
+                const formData = new FormData(filterForm);
+                for (const [key, value] of formData.entries()) {
+                    if (value && value.trim() !== '' && key !== 'category') {
+                        params.append(key, value);
+                    }
+                }
+            }
+
+            if (selectedCategory === "all") {
+                params.delete("category");
+            } else {
+                params.set("category", selectedCategory);
+            }
+            
             params.delete("page");
 
             const targetUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
             window.history.pushState({}, "", targetUrl);
 
+            const bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('filterMenu'));
+            if (bsOffcanvas) bsOffcanvas.hide();
+
             startLoading();
             fetch(targetUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(res => res.json())
                 .then(updateGrid)
-                .catch(() => { if (productsGrid) productsGrid.style.opacity = "1"; if (loader) loader.classList.add("d-none"); });
+                .catch(() => {
+                    if (productsGrid) productsGrid.style.opacity = "1";
+                    if (loader) loader.classList.add("d-none");
+                });
         });
     });
 
-    // 3. Filter offcanvas form Interceptor (Corrected Form Mapping Engine)
-    const filterForm = document.getElementById('catalog-filter-form');
+    function updateGrid(data) {
+        if (productsGrid) { productsGrid.innerHTML = data.html; productsGrid.style.opacity = "1"; }
+        if (sentinel) { sentinel.setAttribute("data-next-page", data.has_next ? "2" : "none"); loadMoreBtn?.classList.toggle("d-none", !data.has_next); }
+        if (loader) loader.classList.add("d-none");
+    }
+
+    function startLoading() { if (productsGrid) productsGrid.style.opacity = "0.4"; if (loader) loader.classList.remove("d-none"); if (loadMoreBtn) loadMoreBtn.classList.add("d-none"); }
+
+    window.applySort = function(sortValue) {
+        const hiddenSort = document.getElementById('hidden-sort-input');
+        if (hiddenSort && filterForm) { hiddenSort.value = sortValue; filterForm.dispatchEvent(new Event('submit')); }
+    };
+
     const diamondToggle = document.getElementById('hasDiamonds');
     const diamondSection = document.getElementById('diamond-details-section');
     
     if (diamondToggle && diamondSection) {
         diamondToggle.addEventListener('change', function() {
             diamondSection.style.display = this.checked ? 'block' : 'none';
-            if (!this.checked) {
-                diamondSection.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-            }
+            if (!this.checked) { diamondSection.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false); }
         });
     }
 
     if (filterForm) {
         filterForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Build fresh URL parameter list
-            const params = new URLSearchParams();
-
-            // Carry forward layout headers
+            e.preventDefault(); const params = new URLSearchParams();
             const currentParams = new URLSearchParams(window.location.search);
             if (currentParams.has('category')) params.set('category', currentParams.get('category'));
             if (currentParams.has('q')) params.set('q', currentParams.get('q'));
-
-            // Map all multi-select items safely to array string keys
             const formData = new FormData(this);
-            for (const [key, value] of formData.entries()) {
-                if (value && value.trim() !== '') {
-                    params.append(key, value);
-                }
-            }
-
+            for (const [key, value] of formData.entries()) { if (value && value.trim() !== '') { params.append(key, value); } }
             const targetUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
             window.history.pushState({}, "", targetUrl);
-
-            const bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('filterMenu'));
-            if (bsOffcanvas) bsOffcanvas.hide();
-
-            startLoading();
-            fetch(targetUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } })
-                .then(res => res.json())
-                .then(updateGrid);
+            const bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('filterMenu')); if (bsOffcanvas) bsOffcanvas.hide();
+            startLoading(); fetch(targetUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } }).then(res => res.json()).then(updateGrid);
         });
 
         document.getElementById('clear-filters-btn')?.addEventListener('click', function() {
-            filterForm.reset();
-            if (diamondSection) diamondSection.style.display = 'none';
-
-            const params = new URLSearchParams();
-            const q = new URLSearchParams(window.location.search).get('q');
-            const cat = new URLSearchParams(window.location.search).get('category');
-            if (q) params.set('q', q);
-            if (cat) params.set('category', cat);
-
-            const targetUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
-            window.history.pushState({}, "", targetUrl);
-
-            const bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('filterMenu'));
-            if (bsOffcanvas) bsOffcanvas.hide();
-
-            startLoading();
-            fetch(targetUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } })
-                .then(res => res.json())
-                .then(updateGrid);
+            filterForm.reset(); if (diamondSection) diamondSection.style.display = 'none';
+            filterForm.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+            if (sliderMin && sliderMax && inputMin && inputMax) { sliderMin.value = sliderMin.min; sliderMax.value = sliderMax.max; inputMin.value = sliderMin.min; inputMax.value = sliderMax.max; }
+            const params = new URLSearchParams(); const currentParams = new URLSearchParams(window.location.search);
+            if (currentParams.has('q')) params.set('q', currentParams.get('q')); if (currentParams.has('category')) params.set('category', currentParams.get('category')); if (currentParams.has('sort')) params.set('sort', currentParams.get('sort'));
+            const targetUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : ""); window.history.pushState({}, "", targetUrl);
+            const bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('filterMenu')); if (bsOffcanvas) bsOffcanvas.hide();
+            startLoading(); fetch(targetUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } }).then(res => res.json()).then(updateGrid);
         });
     }
 
-    // 4. Load more infinite engine
     if (loadMoreBtn) {
         let isLoading = false;
         loadMoreBtn.addEventListener("click", function() {
-            const nextPage = sentinel?.getAttribute("data-next-page");
-            if (nextPage === "none" || isLoading) return;
-            isLoading = true;
-            loadMoreBtn.classList.add("d-none");
-            if (loader) loader.classList.remove("d-none");
-
-            const params = new URLSearchParams(window.location.search);
-            params.set("page", nextPage);
-
-            fetch("?" + params.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
-            .then(res => res.json())
-            .then(data => {
-                if (data.html?.trim()) {
-                    productsGrid.insertAdjacentHTML("beforeend", data.html);
-                    if (data.has_next) {
-                        sentinel.setAttribute("data-next-page", parseInt(nextPage) + 1);
-                        loadMoreBtn.classList.remove("d-none");
-                    } else {
-                        sentinel.setAttribute("data-next-page", "none");
-                    }
-                }
-                isLoading = false;
-                if (loader) loader.classList.add("d-none");
-            })
-            .catch(() => {
-                isLoading = false;
-                loadMoreBtn.classList.remove("d-none");
-                if (loader) loader.classList.add("d-none");
-            });
+            const nextPage = sentinel?.getAttribute("data-next-page"); if (nextPage === "none" || isLoading) return;
+            isLoading = true; loadMoreBtn.classList.add("d-none"); if (loader) loader.classList.remove("d-none");
+            const params = new URLSearchParams(window.location.search); params.set("page", nextPage);
+            fetch("?" + params.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } }).then(res => res.json()).then(data => {
+                if (data.html?.trim()) { productsGrid.insertAdjacentHTML("beforeend", data.html); if (data.has_next) { sentinel.setAttribute("data-next-page", parseInt(nextPage) + 1); loadMoreBtn.classList.remove("d-none"); } else { sentinel.setAttribute("data-next-page", "none"); } }
+                isLoading = false; if (loader) loader.classList.add("d-none");
+            }).catch(() => { isLoading = false; loadMoreBtn.classList.remove("d-none"); if (loader) loader.classList.add("d-none"); });
         });
     }
-
 });
 </script>
-<style>
-    .form-switch .form-check-input:checked {
-        background-color: #222;
-        border-color: #222;
-    }
-</style>
 {% endblock %}

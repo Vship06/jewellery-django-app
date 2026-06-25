@@ -2,51 +2,67 @@
 {% load static %}
 
 {% block content %}
-<div id="profile-container" class="container-fluid py-5 d-flex justify-content-center align-items-center" style="min-height: 75vh; background-color: #fcfbf9;">
-    <div class="w-100 luxury-profile-card" style="max-width: 800px; padding: 3rem;">
+<div id="profile-container" class="container py-4 d-flex justify-content-center align-items-center animate-fade-in" style="min-height: 70vh;">
+    
+    <div class="w-100 p-4 p-md-5 border" style="max-width: 720px; background-color: #fdfcfb; border-color: #eae1d3 !important;">
         
-        <div class="text-center mb-5">
-            <span class="d-block text-uppercase tracking-wider small mb-2" style="color: #d4af37; font-size: 0.7rem; letter-spacing: 2px;">Client Dossier</span>
-            <h2 class="font-serif mb-2" style="font-size: 2.2rem; letter-spacing: 1px;">Modify Profile</h2>
+        <div class="text-center mb-4 pb-2" style="border-bottom: 1px solid rgba(212, 175, 55, 0.15);">
+            <span class="d-block text-uppercase tracking-widest small mb-1" style="color: #d4af37; font-size: 0.65rem; font-weight: 600; letter-spacing: 2px;">Client Dossier</span>
+            <h2 class="font-serif mb-2" style="font-size: 1.85rem; color: #111111; font-weight: 400; letter-spacing: 0.5px;">Modify Profile</h2>
         </div>
         
         <form method="POST" class="m-0 p-0">
             {% csrf_token %}
             
             <div class="row g-4">
-               <div class="col-md-6">   
-                    <label class="luxury-dossier-label text-uppercase tracking-wider d-block mb-2">Account Username</label>
-                    <input type="text" name="username" class="p-3 luxury-dossier-value font-monospace w-100 border-0" value="{{ request.user.username }}" readonly style="cursor: not-allowed; opacity: 0.85;">
+                
+                <div class="col-md-6">   
+                    <label class="text-uppercase tracking-widest text-muted d-block mb-1.5" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">Account Username</label>
+                    <input type="text" name="username" class="form-control rounded-0 bg-transparent border text-dark shadow-none px-3" value="{{ request.user.username }}" readonly style="cursor: not-allowed; opacity: 0.7; height: 42px; font-size: 0.88rem; border-color: #dee2e6;">
                 </div>
 
                 <div class="col-md-6">
-                    <label class="luxury-dossier-label text-uppercase tracking-wider d-block mb-2">Membership Commenced</label>
-                    <input type="text" class="p-3 luxury-dossier-value font-monospace w-100 border-0" value="{{ request.user.date_joined|date:'F d, Y' }}" disabled>
+                    <label class="text-uppercase tracking-widest text-muted d-block mb-1.5" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">Membership Commenced</label>
+                    <input type="text" class="form-control rounded-0 bg-transparent border text-dark shadow-none px-3" value="{{ request.user.date_joined|date:'F d, Y' }}" disabled style="opacity: 0.7; height: 42px; font-size: 0.88rem; border-color: #dee2e6;">
                 </div>
 
                 <div class="col-md-6">
-                    <label class="luxury-dossier-label text-uppercase tracking-wider d-block mb-2">Email Address</label>
-                    <input type="email" name="email" class="p-3 luxury-dossier-value font-monospace w-100" value="{{ u_form.email.value|default:'' }}" required>
+                    <label class="text-uppercase tracking-widest text-muted d-block mb-1.5" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">Email Address</label>
+                    <input type="email" name="email" class="form-control rounded-0 bg-white border text-dark shadow-none px-3 input-focus-burgundy" value="{{ u_form.email.value|default:'' }}" required style="height: 42px; font-size: 0.88rem; border-color: #dee2e6;">
                 </div>
 
                 <div class="col-md-6">
-                    <label class="luxury-dossier-label text-uppercase tracking-wider d-block mb-2">Secure Contact Phone</label>
-                    <input type="text" name="phone_number" class="p-3 luxury-dossier-value font-monospace w-100" value="{{ p_form.phone_number.value|default:'' }}" placeholder="+1 (___) ___-____">
+                    <label class="text-uppercase tracking-widest text-muted d-block mb-1.5" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">Secure Contact Phone</label>
+                    <input type="text" name="phone_number" class="form-control rounded-0 bg-white border text-dark shadow-none px-3 input-focus-burgundy" value="{{ p_form.phone_number.value|default:'' }}" placeholder="+1 (___) ___-____" style="height: 42px; font-size: 0.88rem; border-color: #dee2e6;">
                 </div>
-                <div class="col-12 mt-4 text-center">
-                    <a href="{% url 'password-change' %}" class="btn btn-sm btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-wider font-monospace" style="font-size: 0.7rem; border-color: rgba(0,0,0,0.15); color: #4a453e;">
-                        <i class="bi bi-key-fill me-2 text-muted"></i> Modify Security Password
+                
+                <div class="col-12 text-center mt-3">
+                    <a href="{% url 'password-change' %}" class="text-uppercase tracking-wider text-decoration-underline font-serif" style="font-size: 0.725rem; color: #555555; font-weight: 600; letter-spacing: 0.5px;">
+                        <i class="bi bi-key-fill me-1" style="color: #800020;"></i> Modify Security Password
                     </a>
                 </div>
-                <div class="col-12 mt-5 text-center">
-                    <button type="submit" class="btn btn-dark rounded-0 px-5 py-3 text-uppercase tracking-widest" style="background-color: #3b141c; border-color: #d4af37; color: #ffffff; font-size: 0.75rem;">
+                
+                <div class="col-12 mt-4 pt-2 text-center">
+                    <button type="submit" class="btn btn-dark rounded-0 px-5 text-uppercase tracking-widest font-sans" style="background-color: #111111; border: none; font-size: 0.78rem; letter-spacing: 1.5px; height: 46px;">
                         Save Portfolio Updates
                     </button>
-                    <a href="{% url 'product-home' %}" class="d-block mt-3 small text-muted text-decoration-none text-uppercase tracking-wider" style="font-size: 0.65rem;">Cancel & Return</a>
+                    
+                    <a href="{% url 'product-home' %}" class="d-block mt-3 text-uppercase tracking-widest text-muted text-decoration-none" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px; transition: color 0.2s ease;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#6c757d'">
+                        Cancel & Return
+                    </a>
                 </div>
+
             </div>
         </form>
 
     </div>
 </div>
+
+<style>
+    /* 🟢 Smooth burgundy focus outlines for user interactions */
+    .input-focus-burgundy:focus {
+        border-color: #800020 !important;
+        box-shadow: 0 0 0 1px rgba(128, 0, 32, 0.1) !important;
+    }
+</style>
 {% endblock %}

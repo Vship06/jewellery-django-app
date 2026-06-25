@@ -5,9 +5,13 @@ register = template.Library()
 
 @register.filter(name="split_images")
 def split_images(value):
-    if value:
-        # Splits the string by '|' and removes any empty spaces
-        return [url.strip() for url in value.split("|") if url.strip()]
+    """
+    Handles JSONField image lists.
+    Returns the list directly if it's already a list.
+    """
+    if isinstance(value, list):
+        return value
+
     return []
 
 
@@ -15,16 +19,11 @@ def split_images(value):
 def cart_total_count(cart_dict):
     if not cart_dict:
         return 0
-    # Add up the items instead of counting just dictionary tracking keys!
     return sum(int(quantity) for quantity in cart_dict.values())
 
 
 @register.filter(name="multiply")
 def multiply(value, arg):
-    """
-    Multiplies the template float/int variable by the argument.
-    Usage in template: {{ item.quantity|multiply:item.productvariant.price }}
-    """
     try:
         return float(value) * float(arg)
     except (ValueError, TypeError):
@@ -33,10 +32,6 @@ def multiply(value, arg):
 
 @register.filter(name="get_cart_grand_total")
 def get_cart_grand_total(cart_items_queryset):
-    """
-    Loops through database Cart_item rows to sum up the aggregate grand total.
-    Usage in template: {{ cart_items|get_cart_grand_total }}
-    """
     if not cart_items_queryset:
         return 0.0
 

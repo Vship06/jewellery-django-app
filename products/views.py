@@ -17,7 +17,18 @@ class ProductListView(ListView):
     paginate_by = 16
 
     def get_queryset(self):
-        queryset = Product.objects.all().order_by("-created_at")
+        queryset = Product.objects.all()
+
+        queryset = queryset.annotate(order_min_price=Min("variants__price"))
+
+        sort = self.request.GET.get("sort")
+
+        if sort == "descending":
+            queryset = queryset.order_by("-order_min_price")
+        elif sort == "ascending":
+            queryset = queryset.order_by("order_min_price")
+        else:
+            queryset = queryset.order_by("-created_at")
 
         category_slug = self.request.GET.get("category")
         if category_slug and category_slug != "all":
@@ -74,6 +85,10 @@ class ProductListView(ListView):
         if color:
             queryset = queryset.filter(variants__diamond_color__in=color)
 
+        sub_collections = self.request.GET.getlist("sub")
+        if sub_collections:
+            queryset = queryset.filter(description__in=sub_collections)
+
         return queryset.distinct()
 
     def render_to_response(self, context, **response_kwargs):
@@ -97,6 +112,13 @@ class ProductListView(ListView):
         ).distinct()
 
         variants_qs = ProductVariant.objects.all()
+
+        context["available_sub_collection"] = list(
+            Product.objects.values_list("description", flat=True)
+            .exclude(description__isnull=True)
+            .exclude(description="")
+            .distinct()
+        )
 
         context["available_metals"] = list(
             variants_qs.values_list("base_metal", flat=True)
@@ -140,12 +162,12 @@ class ProductListView(ListView):
         context["db_price_min"] = db_min
         context["db_price_max"] = db_max
 
-        # Selected query tracking (to keep options checked on page refresh)
         context["selected_metals"] = self.request.GET.getlist("metal")
         context["selected_colors"] = self.request.GET.getlist("mcolor")
         context["selected_purities"] = self.request.GET.getlist("purity")
         context["selected_clarities"] = self.request.GET.getlist("clarity")
         context["selected_dcolors"] = self.request.GET.getlist("dcolor")
+        context["selected_sub_collection"] = self.request.GET.getlist("sub")
 
         context["current_price_min"] = int(self.request.GET.get("price_min", db_min))
         context["current_price_max"] = int(self.request.GET.get("price_max", db_max))

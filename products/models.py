@@ -18,7 +18,7 @@ class Product(models.Model):
     name = models.CharField(max_length=150)
     sku = models.CharField(max_length=50, unique=True)
     product_link = models.URLField(max_length=500, blank=True, null=True)
-    image_link = models.URLField(max_length=2000, blank=True, null=True)
+    image_links = models.JSONField(default=list, blank=True, null=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="ring")
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,99 +1,99 @@
 {% extends 'products/base.html' %}
 {% load static %}
-{% load custom_filter %} 
+{% load custom_filter %}
+
+{% block title %}Your Curated Wishlist | Aurora{% endblock %}
 
 {% block content %}
 <div class="container pt-2 pb-5 mt-0">
-
-    <div class="mb-2 animate-fade-in">
-        <a href="/" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
+    
+    <!-- Navigation Back Link with explicit 0.5rem bottom spacing -->
+    <div class="animate-fade-in" style="margin-bottom: 0.5rem !important;">
+        <a href="/" class="luxury-back-link text-decoration-none">
             ← Continue Browsing Collection
         </a>
     </div>
 
-    <h1 class="font-serif text-uppercase tracking-wider mb-3" style="font-size: 2rem; color: #111111;">Your Curated Wishlist</h1>
+  
+    <h1 class="luxury-page-title mb-4 animate-fade-in">Your Curated Wishlist</h1>
 
-    <div class="row g-3">
+    {% if cart_items %}
+    
+    <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 animate-fade-in">
         {% for item in cart_items %}
-            <div class="col-lg-4 col-md-6 col-sm-12 animate-fade-in wishlist-item-card" data-item-id="{{ item.id }}">
-                <div class="card h-100 border rounded-0 p-2 bg-white shadow-sm transition-hover">
-                    
-                    <div class="d-flex align-items-center justify-content-center border-bottom pb-2 mb-2 bg-light-neutral" style="height: 160px; overflow: hidden; background-color: #fafafa;">
-                        {% if item.product.image_link %}
-                            {% with img_list=item.product.image_link|split_images %}
-                                <img src="{{ img_list.0 }}" alt="{{ item.product.name }}" class="img-fluid transition-scale" style="max-height: 100%; max-width: 100%; object-fit: contain;">
-                            {% endwith %}
-                        {% else %}
-                            <div class="text-center text-muted">
-                                <i class="bi bi-gem d-block mb-1" style="font-size: 1.5rem; color: #d4af37;"></i>
-                                <span style="font-size: 0.65rem; letter-spacing: 1px;">AURORA</span>
-                            </div>
+        <div class="col wishlist-item-card" data-item-id="{{ item.id }}">
+            <div class="card royal-card d-flex flex-column h-100 position-relative rounded-0 border shadow-sm" style="background-color: #f7f6f2;">
+                
+                
+                <div class="universal-img-frame bg-white" style="height: 170px !important;">
+                    <a href="{% url 'product-detail' pk=item.product.id %}" class="w-100 h-100 d-flex align-items-center justify-content-center">
+                        {% if item.product.image_links %}
+                            <img src="{{ item.product.image_links.0 }}" alt="{{ item.product.name }}" style="max-height: 90%; max-width: 90%; object-fit: contain; mix-blend-mode: multiply;">
                         {% endif %}
-                    </div>
-
-                    <div class="card-body p-0 d-flex flex-column justify-content-between" style="gap: 1rem;">
-                        <div>
-                            <span class="text-uppercase tracking-widest text-muted d-block mb-1" style="font-size: 0.65rem; letter-spacing: 2px;">{{ item.product.category }}</span>
-                            <h5 class="font-serif text-dark" style="font-size: 1rem; color: #111111; line-height: 1.2; margin: 0.3rem 0;">{{ item.product.name }}</h5>
-
-                            <p class="text-uppercase tracking-wider text-muted" style="font-size: 0.65rem; margin: 0.5rem 0;">
-                                Configuration: <span class="text-dark">{{ item.productvariant.metal_type }}</span>
-                                {% if item.productvariant.size_or_length %}({{ item.productvariant.size_or_length }}){% endif %}
-                            </p>
-                        </div>
-
-                        <div>
-                            <p class="font-serif font-semibold" style="color: #800020; font-size: 1.1rem; margin: 0.5rem 0;">
-                                Rs. {{ item.productvariant.price|floatformat:2 }}
-                            </p>
-
-                            <div class="d-flex flex-column gap-1">
-                                
-                                <form class="ajax-wishlist-add-to-cart-form m-0" action="{% url 'product-add-cart' %}" method="POST">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                                    <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
-                                    <input type="hidden" name="quantity" value="1"> 
-                                    <input type="hidden" name="type" value="cart">
-                                    
-                                    <button type="submit" class="btn btn-outline-dark rounded-0 w-100 text-uppercase tracking-widest py-1" style="font-size: 0.65rem; letter-spacing: 1px;">
-                                        <i class="bi bi-bag me-1"></i> Add To Vault
-                                    </button>
-                                </form>
-
-                                <div class="d-flex gap-1">
-                                    <a href="{% url 'product-detail' pk=item.product.pk %}" class="btn btn-light border rounded-0 w-50 text-uppercase tracking-widest py-1" style="font-size: 0.65rem; letter-spacing: 1px; background-color: #fcfcfc;">
-                                        View
-                                    </a>
-
-                                    <form class="ajax-wishlist-remove-form w-50 m-0" action="{% url 'product-remove' %}" method="POST">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="item_id" value="{{ item.id }}">
-                                        <input type="hidden" name="type" value="wishlist">
-
-                                        <button type="submit" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest py-1" style="font-size: 0.65rem;">
-                                            Remove
-                                        </button>
-                                    </form>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        {% empty %}
-            <div class="col-12 text-center py-3 border animate-fade-in" style="background-color: #faf9f6;">
-                <div class="py-2">
-                    <i class="bi bi-heart text-muted mb-2 d-block" style="font-size: 1.5rem; opacity: 0.4;"></i>
-                    <p class="font-serif italic text-muted mb-2" style="font-size: 0.95rem;">Your curated wishlist is currently empty.</p>
-                    <a href="/" class="btn btn-dark rounded-0 px-3 py-1 text-uppercase tracking-widest small" style="font-size: 0.65rem; background-color: #111111; letter-spacing: 1.5px;">
-                        Explore Royal Masterpieces
                     </a>
                 </div>
+
+                <div class="p-3 d-flex flex-column flex-grow-1">
+                    <a href="{% url 'product-detail' pk=item.product.id %}" class="text-decoration-none mb-2 d-block">
+                        <h6 class="font-serif text-dark mb-0 text-truncate" style="font-size: 1.1rem; font-weight: 500;" title="{{ item.product.name }}">
+                            {{ item.product.name }}
+                        </h6>
+                    </a>
+                    
+                    <div class="mt-auto mb-3">
+                        <span class="font-serif fw-bold" style="font-size: 1.1rem; color: var(--luxury-burgundy);">
+                            Rs. {{ item.productvariant.price|floatformat:2 }}
+                        </span>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2 pt-2 border-top" style="border-color: #eae1d3 !important;">
+                        <!-- Primary CTA: Allocation to Shopping Vault -->
+                        <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-wishlist-add-to-cart-form m-0 w-100">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                            <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
+                            <input type="hidden" name="quantity" value="1">
+                            <input type="hidden" name="override_action" value="increment">
+                            <button type="submit" class="btn btn-dark w-100 rounded-0 py-2 text-uppercase tracking-widest d-flex justify-content-center align-items-center gap-2" style="background-color: #1a1a1a; font-size: 0.75rem; letter-spacing: 1.5px; height: var(--btn-height-md);">
+                                <i class="bi bi-bag-plus"></i> Add To Vault
+                            </button>
+                        </form>
+
+                        <!-- Secondary Segment Interactions -->
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'product-detail' pk=item.product.id %}" class="btn btn-outline-dark rounded-0 w-50 text-uppercase tracking-widest d-flex align-items-center justify-content-center" style="font-size: 0.65rem; letter-spacing: 1px; height: var(--btn-height-sm); border-color: #dee2e6;">
+                                View
+                            </a>
+                            <form action="{% url 'product-remove' %}" method="POST" class="ajax-wishlist-remove-form m-0 w-50">
+                                {% csrf_token %}
+                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                <input type="hidden" name="type" value="wishlist">
+                                <button type="submit" class="btn btn-outline-danger rounded-0 w-100 text-uppercase tracking-widest d-flex align-items-center justify-content-center" style="font-size: 0.65rem; letter-spacing: 1px; height: var(--btn-height-sm); transition: all 0.2s ease;">
+                                    Remove
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
             </div>
+        </div>
         {% endfor %}
     </div>
+    
+    {% else %}
+    <!-- Empty Collection Segment Fallback view -->
+    <div class="text-center py-5 my-5 animate-fade-in">
+        <div class="mb-4">
+            <i class="bi bi-heart text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
+        </div>
+        <h3 class="font-serif mb-3" style="color: #111; letter-spacing: 1px;">Your curation vault is currently empty</h3>
+        <p class="text-muted mb-4 small" style="font-size: 0.85rem;">Keep track of the pieces you love by adding them to your collection.</p>
+        <a href="/" class="btn btn-outline-dark rounded-0 px-5 py-3 text-uppercase tracking-widest" style="font-size: 0.75rem; letter-spacing: 2px; height: var(--btn-height-lg); line-height: 1.5;">
+            Return to Collection
+        </a>
+    </div>
+    {% endif %}
 
+</div>
 {% endblock %}

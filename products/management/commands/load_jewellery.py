@@ -18,7 +18,6 @@ class Command(BaseCommand):
         target_path = options["file_path"]
         excel_files = []
 
-        # 1. Gather Target Files
         if os.path.isdir(target_path):
             self.stdout.write(self.style.NOTICE(f"Scanning folder '{target_path}'..."))
             for file in os.listdir(target_path):
@@ -32,20 +31,20 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("No valid Excel sheets found."))
             return
 
-        # 🔴 2. FRESH CATALOG WIPE: Clears out all old products/variants
         self.stdout.write(
             self.style.MIGRATE_HEADING(
                 "Clearing old catalog items from database for a fresh import..."
             )
         )
+
         ProductVariant.objects.all().delete()
         Product.objects.all().delete()
+
         self.stdout.write(self.style.SUCCESS("Database wiped cleanly."))
 
         success_products = 0
         success_variants = 0
 
-        # Helper to convert messy cells or empty spaces safely to decimal floats or None
         def safe_decimal(val):
             try:
                 if pd.isna(val) or str(val).strip() == "":
@@ -54,18 +53,22 @@ class Command(BaseCommand):
             except (ValueError, TypeError):
                 return None
 
-        # 3. Process each Excel spreadsheet
+        def safe_str(val):
+            if pd.isna(val):
+                return ""
+            return str(val).strip()
+
         for file_path in excel_files:
             self.stdout.write(
                 self.style.MIGRATE_LABEL(
                     f"\nProcessing file: {os.path.basename(file_path)}"
                 )
             )
+
             try:
                 df = pd.read_excel(file_path)
                 df.columns = [str(col).strip() for col in df.columns]
 
-                # Pandas forward-fill system to replicate structural grouping headers down variant rows
                 columns_to_fill = [
                     "name",
                     "sku",
@@ -76,6 +79,7 @@ class Command(BaseCommand):
                     "metal_color",
                     "base_metal",
                 ]
+
                 for col in columns_to_fill:
                     if col in df.columns:
                         df[col] = df[col].replace(r"^\s*$", None, regex=True)
@@ -86,139 +90,88 @@ class Command(BaseCommand):
                 continue
 
             for index, row in df.iterrows():
-                product_name = (
-                    str(row.get("name", "")).strip()
-                    if not pd.isna(row.get("name"))
-                    else ""
+
+                product_name = safe_str(row.get("name"))
+                parent_sku = safe_str(row.get("sku"))
+                category_name = safe_str(row.get("product_type")) or "Luxury Jewelry"
+                description_text = (
+                    safe_str(row.get("collection")) or "An exquisite artisan selection."
                 )
-                parent_sku = (
-                    str(row.get("sku", "")).strip()
-                    if not pd.isna(row.get("sku"))
-                    else ""
-                )
-                category_name = str(row.get("product_type", "Luxury Jewelry")).strip()
-                description_text = str(
-                    row.get("collection", "An exquisite artisan selection.")
-                ).strip()
-                images_payload = str(row.get("image_link", "")).strip()
+
+                # JSONField image handling
+                images_raw = safe_str(row.get("image_link"))
+
+                image_links = [
+                    url.strip() for url in images_raw.split("|") if url and url.strip()
+                ]
 
                 if not product_name or not parent_sku:
                     continue
 
-                # Step A: Create or Fetch Parent Product
                 product, created = Product.objects.update_or_create(
                     sku=parent_sku,
                     defaults={
                         "name": product_name,
                         "category": category_name,
                         "description": description_text,
-                        "image_link": images_payload,
+                        "image_links": image_links,
                     },
                 )
+
                 if created:
                     success_products += 1
 
-                # Step B: Standardize Variant SKU identification
-                variant_sku_id = (
-                    str(row.get("variant_sku", "")).strip()
-                    if not pd.isna(row.get("variant_sku"))
-                    else ""
-                )
+                variant_sku_id = safe_str(row.get("variant_sku"))
+
                 if not variant_sku_id:
                     variant_sku_id = f"{parent_sku}-VAR-{index}"
 
-                # 🟢 STEP C: FORCE UPPERCASE TO ELIMINATE DUPLICATE FILTER ENTRIES (18k vs 18K)
-                purity = (
-                    str(row.get("purity", "")).strip().upper()
-                    if not pd.isna(row.get("purity"))
-                    else ""
-                )
-                metal_color = (
-                    str(row.get("metal_color", "")).strip().upper()
-                    if not pd.isna(row.get("metal_color"))
-                    else ""
-                )
-                base_metal = (
-                    str(row.get("base_metal", "GOLD")).strip().upper()
-                    if not pd.isna(row.get("base_metal"))
-                    else ""
-                )
+                purity = safe_str(row.get("purity")).upper()
+                metal_color = safe_str(row.get("metal_color")).upper()
+                base_metal = safe_str(row.get("base_metal")).upper() or "GOLD"
 
-                # Extract calculated retail values
                 raw_price = row.get("total_price", 0)
                 price_value = safe_decimal(raw_price) or 0.0
 
-                # Step D: Formulate attributes matching your finalized schema properties
                 variant_defaults = {
-                    # Metal properties (Uppercase cleaned strings)
                     "base_metal": base_metal or None,
                     "metal_color": metal_color or None,
                     "purity": purity or None,
-                    # Diamond configurations
-                    "diamond_clarity": (
-                        str(row.get("diamond_clarity", "")).strip()
-                        if not pd.isna(row.get("diamond_clarity"))
-                        else None
-                    ),
-                    "diamond_color": (
-                        str(row.get("diamond_color", "")).strip()
-                        if not pd.isna(row.get("diamond_color"))
-                        else None
-                    ),
-                    "diamond_cut": (
-                        str(row.get("diamond_cut", "")).strip()
-                        if not pd.isna(row.get("diamond_cut"))
-                        else None
-                    ),
-                    "diamond_carat": (
-                        str(row.get("diamond_carat", "")).strip()
-                        if not pd.isna(row.get("diamond_carat"))
-                        else None
-                    ),
-                    "diamond_pcs": (
-                        str(row.get("diamond_pcs", "")).strip()
-                        if not pd.isna(row.get("diamond_pcs"))
-                        else None
-                    ),
-                    # Precise physical weights
+                    "diamond_clarity": safe_str(row.get("diamond_clarity")) or None,
+                    "diamond_color": safe_str(row.get("diamond_color")) or None,
+                    "diamond_cut": safe_str(row.get("diamond_cut")) or None,
+                    "diamond_carat": safe_str(row.get("diamond_carat")) or None,
+                    "diamond_pcs": safe_str(row.get("diamond_pcs")) or None,
                     "net_weight": safe_decimal(row.get("net_weight")),
                     "gross_weight": safe_decimal(row.get("gross_weight")),
                     "stone_weight": safe_decimal(row.get("stone_weight")),
-                    # Operational/Financial breakdowns
                     "metal_charges": safe_decimal(row.get("metal_charges")),
                     "making_charges": safe_decimal(row.get("making_charges")),
-                    "making_charges_discount": safe_decimal(
-                        row.get("making_charges_discount")
-                    )
-                    or 0.0,
+                    "making_charges_discount": (
+                        safe_decimal(row.get("making_charges_discount")) or 0.0
+                    ),
                     "diamond_charges": safe_decimal(row.get("diamond_charges")),
-                    "diamond_charges_discount": safe_decimal(
-                        row.get("diamond_charges_discount")
-                    )
-                    or 0.0,
+                    "diamond_charges_discount": (
+                        safe_decimal(row.get("diamond_charges_discount")) or 0.0
+                    ),
                     "tax": safe_decimal(row.get("tax")),
-                    # Store values
                     "price": price_value,
                     "max_price": safe_decimal(row.get("max_price")),
-                    "size_or_length": (
-                        str(row.get("size", "")).strip()
-                        if not pd.isna(row.get("size"))
-                        else None
-                    ),
+                    "size_or_length": safe_str(row.get("size")) or None,
                     "stock_count": (
                         5
-                        if str(row.get("is_in_stock", "true")).strip().lower()
+                        if safe_str(row.get("is_in_stock", "true")).lower()
                         in ["true", "1", "yes"]
                         else 0
                     ),
                 }
 
-                # Step E: Secure variant row into database tables
                 ProductVariant.objects.update_or_create(
                     product=product,
                     variant_sku=variant_sku_id,
                     defaults=variant_defaults,
                 )
+
                 success_variants += 1
 
         self.stdout.write(

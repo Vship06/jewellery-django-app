@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ========================================================
-    // BLOCK 2: PRODUCT DETAIL SHOWROOM INTERCEPTOR (AJAX)
+    // BLOCK 2: PRODUCT DETAIL SHOWROOM INTERCEPTOR (AJAX) - FIXED
     // ========================================================
     const detailWishlistBtn = document.getElementById("detail-wishlist-toggle-btn");
     
@@ -161,8 +161,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const dataPayload = new FormData();
             
             if (activeForm) {
-                const productId = activeForm.querySelector('[name="product_id"]');
-                if (productId) dataPayload.append("product_id", productId.value);
+                const productIdElement = activeForm.querySelector('[name="product_id"]');
+                // FIXED: Explicitly extraction of the underlying .value string parameter node
+                if (productIdElement) {
+                    dataPayload.append("product_id", productIdElement.value);
+                }
             }
             
             dataPayload.append("variant_id", currentSelectedVariantId);
@@ -185,13 +188,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     const detailText = document.getElementById("detail-wishlist-text");
 
                     if (detailHeart.classList.contains("bi-heart")) {
-                        detailHeart.className = "bi bi-heart-fill me-2";
+                        detailHeart.className = "bi bi-heart-fill";
                         detailHeart.style.setProperty("color", "#800020", "important");
-                        detailText.innerText = "In Your Wishlist";
+                        if (detailText) detailText.innerText = "In Your Wishlist";
                     } else {
-                        detailHeart.className = "bi bi-heart me-2";
+                        detailHeart.className = "bi bi-heart";
                         detailHeart.style.color = "";
-                        detailText.innerText = "Add To Wishlist Vault";
+                        if (detailText) detailText.innerText = "Add To Wishlist Vault";
                     }
 
                     const wishlistCounter = document.getElementById("wishlist-counter");

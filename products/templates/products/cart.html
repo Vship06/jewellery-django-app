@@ -1,175 +1,133 @@
 {% extends 'products/base.html' %}
 {% load static %}
-{% load custom_filter %} 
+{% load custom_filter %}
+
+{% block title %}Your Shopping Vault | Aurora{% endblock %}
 
 {% block content %}
-<div class="container pt-2 pb-5">
+<div class="container pt-2 pb-5 mt-0">
     <div class="mb-2 animate-fade-in">
-        <a href="/" class="luxury-back-link text-decoration-none text-uppercase tracking-widest small text-muted">
+        <a href="/" class="luxury-back-link text-decoration-none">
             ← Continue Browsing Collection
         </a>
     </div>
 
-    <h1 class="font-serif text-uppercase tracking-wider mb-3" style="font-size: 2rem; color: #111111;">Your Shopping Vault</h1>
+    <h1 class="luxury-page-title mb-3 animate-fade-in">Your Shopping Vault</h1>
 
     {% if cart_items %}
-        <div class="row g-4">
-            <div class="col-lg-8 animate-fade-in">
-                <div class="table-responsive">
-                    <table class="table align-middle border-bottom">
-                        <thead class="text-uppercase tracking-widest small text-muted bg-transparent">
-                            <tr>
-                                <th scope="col" class="ps-0 border-0">Product Details</th>
-                                <th scope="col" class="border-0 text-center">Quantity</th>
-                                <th scope="col" class="border-0 text-end pe-0">Total Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in cart_items %}
-                                <tr data-item-id="{{ item.id }}">
-                                    <td class="ps-0 py-3" style="min-width: 300px;">
-                                        <div class="d-flex align-items-center">
-                                            
-                                            <div class="product-image-frame border bg-white d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; min-width: 60px; padding: 4px;">
-                                                {% if item.product.image_link %}
-                                                    {% with img_list=item.product.image_link|split_images %}
-                                                        <img src="{{ img_list.0 }}" alt="{{ item.product.name }}" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: contain;">
-                                                    {% endwith %}
-                                                {% else %}
-                                                    <div class="text-center text-muted d-flex flex-column align-items-center justify-content-center">
-                                                        <i class="bi bi-gem" style="font-size: 0.85rem; color: #d4af37;"></i>
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-
-                                            <div class="ms-4">
-                                                <h5 class="font-serif mb-1" style="font-size: 1.05rem; color: #222222; line-height: 1.2;">{{ item.product.name }}</h5>
-                                                <p class="text-uppercase tracking-wider text-muted mb-0" style="font-size: 0.725rem;">
-                                                    Configuration: {{ item.productvariant.metal_type }} 
-                                                    {% if item.productvariant.size_or_length %}({{ item.productvariant.size_or_length }}){% endif %}
-                                                </p>
-                                                <p class="text-muted mb-1" style="font-size: 0.725rem;">SKU: {{ item.productvariant.variant_sku|default:item.product.sku }}</p>
-                                                
-                                                <form action="{% url 'product-remove' %}" method="POST" class="ajax-cart-remove-form d-inline m-0 p-0">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="item_id" value="{{ item.id }}">
-                                                    <input type="hidden" name="type" value="cart">
-                                                    <button type="submit" class="p-0 text-decoration-none text-uppercase tracking-widest text-danger link-hover-fade" style="font-size: 0.6rem; font-weight: 600; background: none; border: none; letter-spacing: 0.05em; cursor: pointer;">
-                                                        Remove Item From Vault
-                                                    </button>
-                                                </form>
-                                            </div>
+    <div class="row g-5 animate-fade-in">
+        <div class="col-lg-8">
+            <div class="table-responsive overflow-hidden">
+                <table class="table align-middle mb-0 border-0">
+                    <thead class="border-bottom text-uppercase tracking-widest text-muted" style="font-size: 0.65rem;">
+                        <tr>
+                            <th class="border-0 fw-semibold pt-0 pb-3" style="width: 55%; letter-spacing: 2px;">Product Details</th>
+                            <th class="border-0 fw-semibold pt-0 pb-3 text-center" style="width: 22%; letter-spacing: 2px;">Quantity</th>
+                            <th class="border-0 fw-semibold pt-0 pb-3 text-end" style="width: 23%; letter-spacing: 2px;">Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart_items %}
+                        <tr class="border-bottom" data-item-id="{{ item.id }}">
+                            <td class="py-4 border-0">
+                                <div class="d-flex align-items-center gap-4">
+                                    <a href="{% url 'product-detail' pk=item.product.id %}" class="flex-shrink-0 border p-1 text-center bg-white" style="width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;">
+                                        {% if item.product.image_links %}
+                                            <img src="{{ item.product.image_links.0 }}" alt="{{ item.product.name }}" style="max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply;">
+                                        {% endif %}
+                                    </a>
+                                    <div>
+                                        <a href="{% url 'product-detail' pk=item.product.id %}" class="text-decoration-none">
+                                            <h6 class="font-serif text-dark mb-1" style="font-size: 1.05rem; font-weight: 500;">{{ item.product.name }}</h6>
+                                        </a>
+                                        <div class="text-uppercase tracking-widest text-muted mb-2" style="font-size: 0.6rem; letter-spacing: 1px; line-height: 1.5;">
+                                            <span class="d-block">Configuration:</span>
+                                            <span class="fw-semibold text-dark">
+                                                {% if item.productvariant.size_or_length and item.productvariant.size_or_length != 'Standard' %}Size {{ item.productvariant.size_or_length }} | {% endif %}
+                                                {{ item.productvariant.base_metal|default:"Standard" }}{% if item.productvariant.purity and item.productvariant.purity != "—" %} | {{ item.productvariant.purity }}{% endif %}
+                                            </span>
+                                            <span class="d-block mt-1">SKU: {{ item.productvariant.variant_sku|default:item.product.sku }}</span>
                                         </div>
-                                    </td>
-                                    
-                                   <td class="text-center py-3">
-                                        <div class="d-inline-flex align-items-center border px-2 py-1 bg-white">
-                                            
-                                            <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-cart-qty-form m-0 p-0">
+                                        <div class="d-flex align-items-center gap-2 mt-1">
+                                            <a href="{% url 'product-detail' pk=item.product.id %}" class="text-uppercase tracking-widest text-decoration-none" style="color: #555; font-size: 0.6rem; font-weight: 600; letter-spacing: 1px;">View Details</a>
+                                            <span style="color: #eae1d3; font-size: 0.7rem;">|</span>
+                                            <form action="{% url 'product-remove' %}" method="POST" class="ajax-cart-remove-form m-0 d-inline">
                                                 {% csrf_token %}
-                                                <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                                                <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
-                                                <input type="hidden" name="quantity" value="-1">
-                                                <input type="hidden" name="override_action" value="increment">
-                                                <button type="submit" class="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold" {% if item.quantity <= 1 %}disabled style="opacity: 0.3;"{% endif %}>-</button>
-                                            </form>
-
-                                            <span class="px-2 font-serif small text-dark item-qty-label" style="min-width: 24px;">{{ item.quantity }}</span>
-
-                                            <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-cart-qty-form m-0 p-0">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                                                <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
-                                                <input type="hidden" name="quantity" value="1">
-                                                <input type="hidden" name="override_action" value="increment">
-                                                <button type="submit" class="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold">+</button>
+                                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                                <input type="hidden" name="type" value="cart">
+                                                <button type="submit" class="btn btn-link p-0 text-decoration-none text-uppercase tracking-widest" style="color: #c94c4c; font-size: 0.6rem; font-weight: 600; letter-spacing: 1px; box-shadow: none;">Remove Item</button>
                                             </form>
                                         </div>
-                                    </td>
-
-                                    <td class="text-end pe-0 py-3 font-serif text-dark font-semibold item-total-price" style="font-size: 1rem;">
-                                        Rs. {{ item.quantity|multiply:item.productvariant.price|floatformat:2 }}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="col-lg-4 animate-fade-in">
-                <div class="vault-summary-card p-4 border rounded-0" style="background: linear-gradient(135deg, #faf9f6 0%, #f5f2ed 100%); border-color: rgba(212, 175, 55, 0.25);">
-                    <!-- Header with Icon -->
-                    <div class="d-flex align-items-center justify-content-between mb-4 pb-3" style="border-bottom: 1px solid rgba(212, 175, 55, 0.15);">
-                        <div>
-                            <h3 class="font-serif text-uppercase tracking-wider mb-0" style="font-size: 1.15rem; color: #111111; letter-spacing: 1.5px;">Vault Summary</h3>
-                            <p class="text-muted small mb-0" style="font-size: 0.65rem; margin-top: 2px;">Order Details</p>
-                        </div>
-                        <i class="bi bi-shield-lock" style="font-size: 1.8rem; color: rgba(212, 175, 55, 0.6);"></i>
-                    </div>
-
-                    <!-- Summary Items -->
-                    <div class="vault-items mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2" style="border-bottom: 1px solid rgba(212, 175, 55, 0.1);">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-gem" style="font-size: 0.9rem; color: #800020; opacity: 0.7;"></i>
-                                <span class="text-uppercase tracking-widest" style="font-size: 0.65rem; color: #7a7a7a; font-weight: 600;">Subtotal</span>
-                            </div>
-                            <span class="font-serif text-dark" id="cart-grand-total" style="font-size: 0.95rem; font-weight: 600;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center" style="padding-bottom: 0.5rem;">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-truck" style="font-size: 0.9rem; color: #800020; opacity: 0.7;"></i>
-                                <span class="text-uppercase tracking-widest" style="font-size: 0.65rem; color: #7a7a7a; font-weight: 600;">Secured Shipping</span>
-                            </div>
-                            <span class="text-uppercase tracking-widest" style="font-size: 0.65rem; color: #28a745; font-weight: 700;">Complimentary</span>
-                        </div>
-                    </div>
-
-                    <!-- Divider with Premium Look -->
-                    <div style="height: 2px; background: linear-gradient(to right, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.1)); margin: 1rem 0;"></div>
-
-                    <!-- Total Section -->
-                    <div class="total-section mb-4 py-3">
-                        <div class="d-flex justify-content-between align-items-baseline">
-                            <span class="text-uppercase tracking-widest font-weight-bold" style="font-size: 0.7rem; color: #7a7a7a; letter-spacing: 1px;">Estimated Total</span>
-                            <div class="text-right">
-                                <span class="font-serif" id="cart-estimated-total" style="font-size: 1.4rem; font-weight: 700; color: #800020; display: block; line-height: 1.1;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
-                                <p class="text-muted" style="font-size: 0.6rem; margin-top: 2px; margin-bottom: 0;">All taxes included</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CTA Button -->
-                    <a href="#" class="checkout-btn btn d-block text-center w-100 py-3 text-uppercase tracking-widest text-decoration-none rounded-0 mb-3 fw-bold" style="background: linear-gradient(135deg, #111111 0%, #2a0e14 100%); color: #ffffff; font-size: 0.8rem; letter-spacing: 1.5px; transition: all 0.3s ease; border: none;">
-                        <i class="bi bi-lock me-2"></i> Proceed to Secure Checkout
-                    </a>
-
-                    <!-- Trust Badges -->
-                    <div class="trust-section p-3 rounded-0" style="background-color: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.15);">
-                        <p class="text-center text-muted mb-0" style="font-size: 0.65rem; line-height: 1.5;">
-                            <i class="bi bi-shield-check" style="color: #28a745; margin-right: 4px;"></i>
-                            <strong>Secure Transaction</strong>
-                            <br>
-                            <span style="color: #7a7a7a;">100% SSL Encrypted • Insurance Included</span>
-                        </p>
-                    </div>
-
-                    <!-- Additional Info -->
-                    <p class="text-center text-muted italic mt-3 mb-0" style="font-size: 0.65rem; letter-spacing: 0.5px; color: #999999;">
-                        ✓ Premium packaging • Free express shipping • Lifetime verification
-                    </p>
-                </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-4 border-0 text-center">
+                                <div class="d-inline-flex align-items-center border px-2 py-1 bg-white" style="height: 36px;">
+                                    <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-cart-qty-form m-0 p-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                        <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
+                                        <input type="hidden" name="quantity" value="-1">
+                                        <input type="hidden" name="override_action" value="increment">
+                                        <button type="submit" class="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold shadow-none" {% if item.quantity <= 1 %}disabled style="opacity: 0.3;"{% endif %}>-</button>
+                                    </form>
+                                    <span class="px-2 font-serif small text-dark item-qty-label" style="min-width: 24px; font-size: 0.9rem;">{{ item.quantity }}</span>
+                                    <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-cart-qty-form m-0 p-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                        <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
+                                        <input type="hidden" name="quantity" value="1">
+                                        <input type="hidden" name="override_action" value="increment">
+                                        <button type="submit" class="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold shadow-none">+</button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td class="py-4 border-0 text-end">
+                                <span class="font-serif text-dark fw-bold" style="font-size: 1.15rem;">Rs. {{ item.quantity|multiply:item.productvariant.price|floatformat:2 }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
+
+        <div class="col-lg-4">
+            <div class="p-4 border" style="background-color: #fdfcfb; border-color: #eae1d3 !important; position: sticky; top: 100px;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-serif m-0" style="font-size: 1.2rem; letter-spacing: 1px; color: #111;">VAULT SUMMARY</h5>
+                    <i class="bi bi-shield-lock" style="color: var(--luxury-gold); font-size: 1.2rem;"></i>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1.5px;"><i class="bi bi-gem me-1"></i> Subtotal</span>
+                    <span class="font-serif fw-bold text-dark" style="font-size: 1rem;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1.5px;"><i class="bi bi-truck me-1"></i> Secured Shipping</span>
+                    <span class="text-uppercase tracking-widest" style="font-size: 0.65rem; color: #2e8b57; font-weight: 600;">Complimentary</span>
+                </div>
+                <div class="p-3 mb-4" style="background-color: #f6f3ee;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-uppercase tracking-widest text-muted" style="font-size: 0.7rem; letter-spacing: 1px;">Estimated Total</span>
+                        <div class="text-end">
+                            <h4 class="font-serif m-0" style="color: var(--luxury-burgundy); font-size: 1.25rem; font-weight: 600;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</h4>
+                            <span class="text-muted d-block mt-1" style="font-size: 0.6rem;">All taxes included</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest d-flex justify-content-center align-items-center gap-2" style="background-color: #1a1a1a; font-size: 0.8rem; letter-spacing: 2px; height: var(--btn-height-lg);">
+                    <i class="bi bi-lock"></i> Proceed To Secure Checkout
+                </a>
+            </div>
+        </div>
+    </div>
     {% else %}
-        <div class="text-center py-3 border bg-light-neutral animate-fade-in" style="background-color: #faf9f6;">
-            <p class="font-serif italic text-muted mb-2" style="font-size: 0.95rem;">Your shopping vault is currently empty.</p>
-            <a href="/" class="btn btn-outline-dark rounded-0 px-3 py-1 text-uppercase tracking-widest small" style="font-size: 0.65rem;">
-                Explore Royal Masterpieces
-            </a>
-        </div>
+    <div class="text-center py-5 my-2 animate-fade-in">
+        <div class="mb-4"><i class="bi bi-bag text-muted" style="font-size: 3rem; opacity: 0.3;"></i></div>
+        <h3 class="font-serif mb-3" style="color: #111; letter-spacing: 1px;">Your vault is currently empty</h3>
+        <p class="text-muted mb-4 small" style="font-size: 0.85rem;">Discover our latest arrivals and timeless classics.</p>
+        <a href="/" class="btn btn-outline-dark rounded-0 px-5 py-3 text-uppercase tracking-widest" style="font-size: 0.75rem; letter-spacing: 2px; height: var(--btn-height-lg); line-height: 1.5;">Return to Collection</a>
+    </div>
     {% endif %}
 </div>
 {% endblock %}
