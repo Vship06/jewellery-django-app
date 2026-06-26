@@ -154,6 +154,23 @@ h1, h2, h3, h4, h5, h6, .brand-logo, .font-serif {
     opacity: 0;
 }
 
+/* Fallback for broken/missing product images */
+.universal-img-frame.img-error {
+    background-color: #f0ece4;
+}
+
+.universal-img-frame.img-error::after {
+    content: '\F3D0';
+    font-family: 'Bootstrap-icons';
+    font-size: 2.5rem;
+    color: #d4af37;
+    opacity: 0.4;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
 .card-inline-wishlist-btn {
     background: transparent;
     border: none;
@@ -808,3 +825,30 @@ h1, h2, h3, h4, h5, h6, .brand-logo, .font-serif {
     pointer-events: auto;
     border-radius: 50%;
 }
+
+.main-workspace {
+    padding-top: 20px; /* Adjust based on your navbar height */
+}
+
+/* 2. Fix the Vault Summary (Sidebar) */
+.vault-summary-wrapper {
+    position: sticky;
+    top: 120px; /* This keeps it below the sticky navbar */
+    z-index: 900; 
+    background-color: #ffffff;
+    padding: 20px;
+    border: 1px solid #eae1d3;
+}
+
+/* 3. Ensure Dropdowns are always on top */
+.dropdown-menu {
+    z-index: 2000 !important; /* Higher than navbar's 1050 */
+}
+
+/* 4. Fix Table/Vault Summary overlap on small screens */
+@media (max-width: 991px) {
+    .vault-summary-wrapper {
+        position: static;
+        margin-top: 30px;
+    }
+}   

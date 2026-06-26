@@ -86,6 +86,25 @@
             object-fit: contain;
             mix-blend-mode: multiply;
         }
+
+        /* Luxury Image Swap Transition Configurations */
+        .luxury-hover-card:hover .primary-img {
+            opacity: 0 !important;
+        }
+
+        .luxury-hover-card:hover .secondary-img {
+            opacity: 1 !important;
+        }
+
+        /* Fix Navbar Z-Index and Dropdown interaction */
+        .royal-navbar {
+            z-index: 1050; /* Ensure navbar sits above content */
+        }
+
+        /* Ensure Dropdowns appear above everything */
+        .dropdown-menu {
+            z-index: 1060; /* Higher than the navbar */
+        }
     </style>
 </head>
 <body>
@@ -179,6 +198,23 @@
     </nav>
 
     <main class="main-workspace my-4" style="min-height: 75vh;">
+        {% if messages %}
+            <div class="container mt-2 mb-1 animate-fade-in">
+                {% for message in messages %}
+                    <div class="alert alert-dismissible fade show rounded-0 py-3 px-4 border-0 shadow-sm" 
+                         role="alert" 
+                         style="background-color: #faf4f5; border-left: 4px solid #800020 !important; color: #1a1a1a;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="font-serif small" style="font-size: 0.88rem; letter-spacing: 0.3px;">
+                                <i class="bi bi-shield-check me-2" style="color: #800020; font-size: 1rem;"></i>
+                                {{ message }}
+                            </span>
+                            <button type="button" class="btn-close shadow-none p-0 position-relative" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.75rem; top: 2px; right: 0;"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 

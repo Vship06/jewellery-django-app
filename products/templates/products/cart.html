@@ -33,7 +33,7 @@
                                 <div class="d-flex align-items-center gap-4">
                                     <a href="{% url 'product-detail' pk=item.product.id %}" class="flex-shrink-0 border p-1 text-center bg-white" style="width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;">
                                         {% if item.product.image_links %}
-                                            <img src="{{ item.product.image_links.0 }}" alt="{{ item.product.name }}" style="max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply;">
+                                            <img src="{{ item.product.image_links.0 }}" alt="{{ item.product.name }}" onerror="this.style.visibility='hidden';" style="max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply;">
                                         {% endif %}
                                     </a>
                                     <div>
@@ -51,12 +51,53 @@
                                         <div class="d-flex align-items-center gap-2 mt-1">
                                             <a href="{% url 'product-detail' pk=item.product.id %}" class="text-uppercase tracking-widest text-decoration-none" style="color: #555; font-size: 0.6rem; font-weight: 600; letter-spacing: 1px;">View Details</a>
                                             <span style="color: #eae1d3; font-size: 0.7rem;">|</span>
+                                            <a class="text-uppercase tracking-widest text-decoration-none" data-bs-toggle="collapse" href="#priceBreakup-{{ item.id }}" role="button" aria-expanded="false" style="color: var(--luxury-burgundy, #800020); font-size: 0.6rem; font-weight: 600; letter-spacing: 1px;">Price Breakup</a>
+                                            <span style="color: #eae1d3; font-size: 0.7rem;">|</span>
                                             <form action="{% url 'product-remove' %}" method="POST" class="ajax-cart-remove-form m-0 d-inline">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="item_id" value="{{ item.id }}">
                                                 <input type="hidden" name="type" value="cart">
                                                 <button type="submit" class="btn btn-link p-0 text-decoration-none text-uppercase tracking-widest" style="color: #c94c4c; font-size: 0.6rem; font-weight: 600; letter-spacing: 1px; box-shadow: none;">Remove Item</button>
                                             </form>
+                                        </div>
+                                        <div class="collapse mt-2" id="priceBreakup-{{ item.id }}">
+                                            <div class="p-3 rounded-0" style="background-color: #fdfcfb; border: 1px solid #eae1d3; font-size: 0.78rem;">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;">Metal Charges</span>
+                                                    <span class="fw-medium">{% if item.productvariant.metal_charges %}Rs. {{ item.productvariant.metal_charges|floatformat:2 }}{% else %}—{% endif %}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;">Making Charges</span>
+                                                    <span class="fw-medium">{% if item.productvariant.making_charges %}Rs. {{ item.productvariant.making_charges|floatformat:2 }}{% else %}—{% endif %}</span>
+                                                </div>
+                                                {% if item.productvariant.making_charges_discount %}
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;">Making Discount</span>
+                                                    <span class="fw-medium" style="color: #2e8b57;">- Rs. {{ item.productvariant.making_charges_discount|floatformat:2 }}</span>
+                                                </div>
+                                                {% endif %}
+                                                {% if item.productvariant.diamond_charges %}
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;">Diamond Charges</span>
+                                                    <span class="fw-medium">Rs. {{ item.productvariant.diamond_charges|floatformat:2 }}</span>
+                                                </div>
+                                                {% endif %}
+                                                {% if item.productvariant.diamond_charges_discount %}
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;">Diamond Discount</span>
+                                                    <span class="fw-medium" style="color: #2e8b57;">- Rs. {{ item.productvariant.diamond_charges_discount|floatformat:2 }}</span>
+                                                </div>
+                                                {% endif %}
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;">Tax (GST)</span>
+                                                    <span class="fw-medium">{% if item.productvariant.tax %}Rs. {{ item.productvariant.tax|floatformat:2 }}{% else %}—{% endif %}</span>
+                                                </div>
+                                                <hr class="my-2" style="border-color: #eae1d3; opacity: 1;">
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="fw-bold text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px; color: #111;">Unit Price</span>
+                                                    <span class="fw-bold font-serif" style="color: var(--luxury-burgundy, #800020);">Rs. {{ item.productvariant.price|floatformat:2 }}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -93,29 +134,43 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="p-4 border" style="background-color: #fdfcfb; border-color: #eae1d3 !important; position: sticky; top: 100px;">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="font-serif m-0" style="font-size: 1.2rem; letter-spacing: 1px; color: #111;">VAULT SUMMARY</h5>
-                    <i class="bi bi-shield-lock" style="color: var(--luxury-gold); font-size: 1.2rem;"></i>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1.5px;"><i class="bi bi-gem me-1"></i> Subtotal</span>
-                    <span class="font-serif fw-bold text-dark" style="font-size: 1rem;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <span class="text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1.5px;"><i class="bi bi-truck me-1"></i> Secured Shipping</span>
-                    <span class="text-uppercase tracking-widest" style="font-size: 0.65rem; color: #2e8b57; font-weight: 600;">Complimentary</span>
-                </div>
-                <div class="p-3 mb-4" style="background-color: #f6f3ee;">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-uppercase tracking-widest text-muted" style="font-size: 0.7rem; letter-spacing: 1px;">Estimated Total</span>
-                        <div class="text-end">
-                            <h4 class="font-serif m-0" style="color: var(--luxury-burgundy); font-size: 1.25rem; font-weight: 600;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</h4>
-                            <span class="text-muted d-block mt-1" style="font-size: 0.6rem;">All taxes included</span>
-                        </div>
+            <div class="bg-white p-4 p-md-5 border shadow-sm sticky-top" style="top: 120px;">
+                <h3 class="font-serif mb-4" style="font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase;">Vault Summary</h3>
+                
+                <div class="mb-4 pb-4 border-bottom">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted text-uppercase tracking-widest" style="font-size: 0.7rem;">Subtotal</span>
+                        <!-- Added id="vault-subtotal" -->
+                        <span id="vault-subtotal" class="font-serif text-dark" style="font-size: 0.9rem;">Rs. {{ cart_subtotal|default:"0.00"|floatformat:2 }}</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted text-uppercase tracking-widest" style="font-size: 0.7rem;">Making Charges</span>
+                        <!-- Added id="vault-making-charges" -->
+                        <span id="vault-making-charges" class="font-serif text-dark" style="font-size: 0.9rem;">Rs. {{ cart_making_charges|default:"0.00"|floatformat:2 }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted text-uppercase tracking-widest" style="font-size: 0.7rem;">Tax</span>
+                        <!-- Added id="vault-tax" -->
+                        <span id="vault-tax" class="font-serif text-dark" style="font-size: 0.9rem;">Rs. {{ cart_tax|default:"0.00"|floatformat:2 }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted text-uppercase tracking-widest" style="font-size: 0.7rem;">Insured Shipping</span>
+                        <span class="text-success tracking-widest fw-semibold" style="font-size: 0.65rem; letter-spacing: 1px;">COMPLIMENTARY</span>
                     </div>
                 </div>
-                <a href="#" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest d-flex justify-content-center align-items-center gap-2" style="background-color: #1a1a1a; font-size: 0.8rem; letter-spacing: 2px; height: var(--btn-height-lg);">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="text-dark text-uppercase tracking-widest fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Grand Total</span>
+                    <div class="text-end">
+                        <!-- Added id="vault-grand-total" -->
+                        <h4 id="vault-grand-total" class="font-serif m-0" style="color: var(--luxury-burgundy); font-size: 1.25rem; font-weight: 600;">Rs. {{ cart_items|get_cart_grand_total|floatformat:2 }}</h4>
+                    </div>
+                </div>
+                
+                <a href="{% url 'product-payment' %}" class="btn btn-dark rounded-0 w-100 text-uppercase tracking-widest d-flex justify-content-center align-items-center gap-2" style="background-color: #1a1a1a; font-size: 0.8rem; letter-spacing: 2px; height: var(--btn-height-lg);">
                     <i class="bi bi-lock"></i> Proceed To Secure Checkout
                 </a>
             </div>

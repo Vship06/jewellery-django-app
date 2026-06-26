@@ -10,22 +10,25 @@ urlpatterns = [
     ),
     path(
         "product/add-to-cart/",
-        product_views.AddTo,
+        product_views.add_to,
         {"type": "cart"},
         name="product-add-cart",
     ),
     path(
         "product/add-to-wishlist/",
-        product_views.AddTo,
+        product_views.add_to,
         {"type": "wishlist"},
         name="product-add-wishlist",
     ),
-    path("product/remove-item/", product_views.RemoveFrom, name="product-remove"),
-    path("product/cart/", product_views.CartView, {"type": "cart"}, name="cart-view"),
+    path("product/remove-item/", product_views.remove_from, name="product-remove"),
+    path("product/cart/", product_views.cart_view, {"type": "cart"}, name="cart-view"),
     path(
         "product/wishlist/",
-        product_views.CartView,
+        product_views.cart_view,
         {"type": "wishlist"},
         name="wishlist-view",
+    ),
+    path(
+        "product/payment", product_views.PaymentView.as_view(), name="product-payment"
     ),
 ]

@@ -162,7 +162,6 @@ document.addEventListener("DOMContentLoaded", function () {
             
             if (activeForm) {
                 const productIdElement = activeForm.querySelector('[name="product_id"]');
-                // FIXED: Explicitly extraction of the underlying .value string parameter node
                 if (productIdElement) {
                     dataPayload.append("product_id", productIdElement.value);
                 }
@@ -183,18 +182,22 @@ document.addEventListener("DOMContentLoaded", function () {
                 return response.json();
             })
             .then(data => {
-                if (data.status === "success" || data.action === "exists") {
+                // FIXED: We now rely directly on the ACTION string returned by Django ('added' or 'removed') 
+                // instead of guessing the state by analyzing HTML class names before transmission!
+                if (data.status === "success") {
                     const detailHeart = document.getElementById("detail-heart-icon");
                     const detailText = document.getElementById("detail-wishlist-text");
 
-                    if (detailHeart.classList.contains("bi-heart")) {
-                        detailHeart.className = "bi bi-heart-fill";
-                        detailHeart.style.setProperty("color", "#800020", "important");
-                        if (detailText) detailText.innerText = "In Your Wishlist";
-                    } else {
-                        detailHeart.className = "bi bi-heart";
-                        detailHeart.style.color = "";
-                        if (detailText) detailText.innerText = "Add To Wishlist Vault";
+                    if (detailHeart) {
+                        if (data.action === "added") {
+                            detailHeart.className = "bi bi-heart-fill";
+                            detailHeart.style.setProperty("color", "#800020", "important");
+                            if (detailText) detailText.innerText = "In Your Wishlist";
+                        } else if (data.action === "removed") {
+                            detailHeart.className = "bi bi-heart";
+                            detailHeart.style.color = "";
+                            if (detailText) detailText.innerText = "Add To Wishlist Vault";
+                        }
                     }
 
                     const wishlistCounter = document.getElementById("wishlist-counter");
@@ -205,10 +208,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     const toast = document.getElementById("luxury-notification");
                     const toastMsg = document.getElementById("toast-message");
-                    if (toast && toastMsg && data.action !== "exists") {
-                        toastMsg.innerText = "Successfully allocated to your wishlist vault.";
-                        toast.classList.add("show");
-                        setTimeout(() => { toast.classList.remove("show"); }, 3500);
+                    if (toast && toastMsg) {
+                        if (data.action === "added") {
+                            toastMsg.innerText = "Successfully allocated to your wishlist vault.";
+                            toast.classList.add("show");
+                            setTimeout(() => { toast.classList.remove("show"); }, 3500);
+                        } else if (data.action === "removed") {
+                            toastMsg.innerText = "Removed from your wishlist vault.";
+                            toast.classList.add("show");
+                            setTimeout(() => { toast.classList.remove("show"); }, 3500);
+                        }
                     }
                 }
             })
@@ -227,12 +236,17 @@ document.addEventListener("DOMContentLoaded", function () {
             e.stopImmediatePropagation();
 
             const dataPayload = new FormData(this);
+            // Fetch the exact URL dynamically from your updated detail.html form
+            const targetUrl = this.getAttribute("action") || "/product/add-to-cart/";
             dataPayload.append("type", "cart"); 
 
-            fetch("/product/add-to-cart/", {
+            fetch(targetUrl, {
                 method: "POST",
                 body: dataPayload,
-                headers: { "X-CSRFToken": dataPayload.get("csrfmiddlewaretoken") }
+                headers: { 
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": dataPayload.get("csrfmiddlewaretoken") 
+                }
             })
             .then(response => {
                 if (!response.ok) throw new Error("Cart pipeline transmission error.");
@@ -240,12 +254,20 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(data => {
                 if (data.status === "success") {
+                    // 1. Update Header Counter
                     const cartCounter = document.getElementById("cart-counter");
                     if (cartCounter) {
                         cartCounter.innerText = data.cart_count;
                         cartCounter.classList.remove("d-none");
                     }
                     
+                    // 2. REVEAL THE INLINE CONFIRMATION AND LINK
+                    const inlineConfirmation = document.getElementById("cart-inline-confirmation");
+                    if (inlineConfirmation) {
+                        inlineConfirmation.classList.remove("d-none");
+                    }
+                    
+                    // 3. Fallback Toast Notification
                     const toast = document.getElementById("luxury-notification");
                     const toastMsg = document.getElementById("toast-message");
                     if (toast && toastMsg) {
@@ -524,6 +546,8 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(data => {
             if (data.status === "success" && data.action === "removed") {
+                
+                // 1. Update Cart Counter
                 const cartCounter = document.getElementById("cart-counter");
                 if (cartCounter) {
                     cartCounter.innerText = data.cart_count;
@@ -532,19 +556,36 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
 
+                // 2. DYNAMICALLY UPDATE ALL VAULT PRICES
+                if (document.getElementById("vault-subtotal")) {
+                    document.getElementById("vault-subtotal").innerText = "Rs. " + data.cart_subtotal;
+                    document.getElementById("vault-making-charges").innerText = "Rs. " + data.cart_making_charges;
+                    document.getElementById("vault-tax").innerText = "Rs. " + data.cart_tax;
+                    document.getElementById("vault-grand-total").innerText = "Rs. " + data.grand_total;
+                    
+                    // Conditionally update Metal and Diamond charges if they exist on the page
+                    const metalEl = document.getElementById("vault-metal-charges");
+                    if (metalEl) metalEl.innerText = "Rs. " + data.cart_metal_charges;
+                    
+                    const diamondEl = document.getElementById("vault-diamond-charges");
+                    if (diamondEl) diamondEl.innerText = "Rs. " + data.cart_diamond_charges;
+                }
+
+                // 3. Visually fade out the row before removing it
                 tableRow.style.transition = "all 0.35s ease";
                 tableRow.style.opacity = "0";
                 tableRow.style.transform = "translateX(-20px)";
                 
                 setTimeout(() => {
                     tableRow.remove();
+                    // If cart is completely empty, reload page to show empty state
                     if (document.querySelectorAll("tbody tr").length === 0) {
                         window.location.reload();
                     }
                 }, 350);
             }
         })
-        .catch(err => console.error("Vault item live suppression network failure:", err));
+        .catch(err => console.error("Vault row dynamic deletion failed:", err));
     });
 
     // ========================================================
@@ -581,5 +622,65 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch(err => console.error("Quantity modifier execution failed:", err));
     });
+
+    // ========================================================
+    // BLOCK: DYNAMIC CART ITEM REMOVAL (AJAX) - FORCE CAPTURE
+    // ========================================================
+    document.addEventListener("click", function (e) {
+        const removeBtn = e.target.closest(".remove-item-btn");
+        if (!removeBtn) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const itemId = removeBtn.getAttribute("data-item-id");
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+        if (!csrfToken) {
+            console.error("CSRF Token missing! Check your base.html/cart.html for {% csrf_token %}");
+            return;
+        }
+
+        const dataPayload = new FormData();
+        dataPayload.append("item_id", itemId);
+
+        fetch("/product/remove-item/", {
+            method: "POST",
+            body: dataPayload,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrfToken
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === "success") {
+                // Remove the table row visually
+                const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+                if (row) row.remove();
+
+                // Update the Vault Summary IDs we added
+                if (document.getElementById("vault-subtotal")) {
+                    document.getElementById("vault-subtotal").innerText = "Rs. " + data.cart_subtotal;
+                    document.getElementById("vault-making-charges").innerText = "Rs. " + data.cart_making_charges;
+                    document.getElementById("vault-tax").innerText = "Rs. " + data.cart_tax;
+                    document.getElementById("vault-grand-total").innerText = "Rs. " + data.grand_total;
+                }
+                
+                // If the cart is empty, reload the page to show the "Empty Cart" message
+                if (data.cart_count === 0) {
+                    window.location.reload();
+                }
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(err => console.error("Remove failed:", err));
+    }, true); // The 'true' at the end is the 'capture' phase; it forces the click to be caught!
+
+
 
 }); // 🔒 Safe pipeline closure

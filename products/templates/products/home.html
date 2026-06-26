@@ -138,37 +138,37 @@
 
                 <div class="mb-4">
                     <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Base Metal</h6>
-                    {% for metal in available_metals %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="metal" value="{{ metal }}" id="m_{{ forloop.counter }}" {% if metal in selected_metals %}checked{% endif %}>
-                            <label class="form-check-label font-serif" for="m_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ metal }}</label>
-                        </div>
+                    {% for item in available_metals %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="metal" value="{{ item }}" id="metal_{{ forloop.counter }}" {% if item in selected_metals %}checked{% endif %}>
+                        <label class="form-check-label font-serif" for="metal_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ item }}</label>
+                    </div>
                     {% empty %}
-                        <p class="text-muted small font-serif italic">No metal parameters logged.</p>
+                        <p class="text-muted small">No metals available.</p>
                     {% endfor %}
                 </div>
 
                 <div class="mb-4">
-                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Metal Purity</h6>
-                    {% for purity in available_purities %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="purity" value="{{ purity }}" id="p_{{ forloop.counter }}" {% if purity in selected_purities %}checked{% endif %}>
-                            <label class="form-check-label font-serif" for="p_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ purity }}</label>
-                        </div>
+                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Purity</h6>
+                    {% for item in available_purities %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="purity" value="{{ item }}" id="purity_{{ forloop.counter }}" {% if item in selected_purities %}checked{% endif %}>
+                        <label class="form-check-label font-serif" for="purity_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ item }}</label>
+                    </div>
                     {% empty %}
-                        <p class="text-muted small font-serif italic">No purities cataloged.</p>
+                        <p class="text-muted small">No purities available.</p>
                     {% endfor %}
                 </div>
 
                 <div class="mb-4">
-                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Metal Tone</h6>
-                    {% for color in available_colors %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="mcolor" value="{{ color }}" id="c_{{ forloop.counter }}" {% if color in selected_colors %}checked{% endif %}>
-                            <label class="form-check-label font-serif" for="c_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ color }}</label>
-                        </div>
+                    <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Metal Color</h6>
+                    {% for item in available_colors %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="mcolor" value="{{ item }}" id="mcolor_{{ forloop.counter }}" {% if item in selected_colors %}checked{% endif %}>
+                        <label class="form-check-label font-serif" for="mcolor_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ item }}</label>
+                    </div>
                     {% empty %}
-                        <p class="text-muted small font-serif italic">No color tones cataloged.</p>
+                        <p class="text-muted small">No colors available.</p>
                     {% endfor %}
                 </div>
 
@@ -185,20 +185,24 @@
                 <div id="diamond-details-section" style="{% if has_diamonds == '1' %}display: block;{% else %}display: none;{% endif %} padding-left: 0.75rem; border-left: 2px solid #d4af37;">
                     <div class="mb-4">
                         <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Diamond Clarity</h6>
-                        {% for clarity in available_clarities %}
-                            <div class="form-check mb-2">
-                                <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="clarity" value="{{ clarity }}" id="cl_{{ forloop.counter }}" {% if clarity in selected_clarities %}checked{% endif %}>
-                                <label class="form-check-label font-serif" for="cl_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ clarity }}</label>
-                            </div>
+                        {% for item in available_clarities %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="clarity" value="{{ item }}" id="clarity_{{ forloop.counter }}" {% if item in selected_clarities %}checked{% endif %}>
+                            <label class="form-check-label font-serif" for="clarity_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ item }}</label>
+                        </div>
+                        {% empty %}
+                            <p class="text-muted small">No clarity grades available.</p>
                         {% endfor %}
                     </div>
                     <div class="mb-4">
                         <h6 class="text-uppercase tracking-widest text-muted small mb-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Diamond Color</h6>
-                        {% for dcol in available_colors_d %}
-                            <div class="form-check mb-2">
-                                <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="dcolor" value="{{ dcol }}" id="dc_{{ forloop.counter }}" {% if dcol in selected_dcolors %}checked{% endif %}>
-                                <label class="form-check-label font-serif" for="dc_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ dcol }}</label>
-                            </div>
+                        {% for item in available_colors_d %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input rounded-0 shadow-none" type="checkbox" name="dcolor" value="{{ item }}" id="dcolor_{{ forloop.counter }}" {% if item in selected_dcolors %}checked{% endif %}>
+                            <label class="form-check-label font-serif" for="dcolor_{{ forloop.counter }}" style="font-size: 0.9rem; color: #333;">{{ item }}</label>
+                        </div>
+                        {% empty %}
+                            <p class="text-muted small">No color grades available.</p>
                         {% endfor %}
                     </div>
                 </div>

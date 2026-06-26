@@ -1,0 +1,72 @@
+{% extends "products/base.html" %}
+{% load static %}
+{% load custom_filter %}
+
+{% block title %}Secure Checkout | Aurora{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-5">
+        <div class="col-lg-7">
+            <h2 class="font-serif text-uppercase tracking-widest mb-4" style="font-size: 1.25rem;">Payment Information</h2>
+            
+            <form id="payment-execution-form" method="POST" action="{% url 'product-payment' %}">
+                {% csrf_token %}
+                
+                <div class="d-flex gap-3 mb-4">
+                    <input type="radio" class="btn-check" name="payment_method" id="pay_card" value="card" checked>
+                    <label class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest small font-serif" for="pay_card">
+                        <i class="bi bi-credit-card me-2"></i> Credit / Debit
+                    </label>
+                    <input type="radio" class="btn-check" name="payment_method" id="pay_upi" value="upi">
+                    <label class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest small font-serif" for="pay_upi">
+                        <i class="bi bi-qr-code me-2"></i> UPI / QR
+                    </label>
+                </div>
+
+                <div class="p-4 border border-dark-subtle rounded-0 bg-white">
+                    <div class="mb-3">
+                        <label class="text-uppercase tracking-widest text-muted small d-block mb-1">Cardholder Name</label>
+                        <input type="text" class="form-control rounded-0 shadow-none border-secondary" required style="height: 44px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-uppercase tracking-widest text-muted small d-block mb-1">Card Number</label>
+                        <input type="text" placeholder="0000 0000 0000 0000" class="form-control rounded-0 shadow-none border-secondary" style="height: 44px;">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="text-uppercase tracking-widest text-muted small d-block mb-1">Expiry</label>
+                            <input type="text" placeholder="MM/YY" class="form-control rounded-0 shadow-none border-secondary" style="height: 44px;">
+                        </div>
+                        <div class="col-6">
+                            <label class="text-uppercase tracking-widest text-muted small d-block mb-1">CVV</label>
+                            <input type="password" placeholder="•••" class="form-control rounded-0 shadow-none border-secondary" style="height: 44px;">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-dark w-100 rounded-0 py-3 mt-4 text-uppercase tracking-widest fw-bold" 
+                        style="background-color: #111; border: none; letter-spacing: 2px;">
+                    Authorize Payment
+                </button>
+            </form>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="p-4 bg-light border border-secondary rounded-0">
+                <h4 class="font-serif mb-4 text-uppercase tracking-widest" style="font-size: 1rem;">Order Manifest</h4>
+                {% for item in cart_items %}
+                <div class="d-flex justify-content-between mb-3 border-bottom pb-2 font-serif small">
+                    <span>{{ item.product.name }} (x{{ item.quantity }})</span>
+                    <span class="text-dark">Rs. {{ item.productvariant.price|multiply:item.quantity|floatformat:2 }}</span>
+                </div>
+                {% endfor %}
+                <div class="d-flex justify-content-between pt-2">
+                    <span class="text-uppercase tracking-widest text-muted small">Total</span>
+                    <h4 class="font-serif fw-bold" style="color: var(--luxury-burgundy);">Rs. {{ cart_total|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

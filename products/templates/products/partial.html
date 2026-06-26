@@ -2,15 +2,25 @@
 
 {% for product in products %}
 <div class="col-12 col-sm-6 col-md-4 col-lg-3 d-flex align-items-stretch animate-fade-in">
-    <div class="card royal-card d-flex flex-column position-relative h-100 w-100 rounded-0 border shadow-sm" style="background-color: #f7f6f2;">
+    <div class="card royal-card d-flex flex-column position-relative h-100 w-100 rounded-0 border shadow-sm luxury-hover-card" style="background-color: #f7f6f2;">
 
         <a href="{% url 'product-detail' pk=product.id %}" class="text-decoration-none card-wrapper-link">
             {% if product.image_links %}
                 {% with img_list=product.image_links %}
-                    <div class="universal-img-frame {% if img_list|length > 1 %}has-swap{% endif %}">
-                        <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="primary-img">
-                        {% if img_list|length > 1 %}
-                            <img src="{{ img_list.1 }}" alt="{{ product.name }} Alternate View" class="secondary-img d-none">
+                    <div class="universal-img-frame {% if img_list.1 %}has-swap{% endif %}" style="position: relative; height: 240px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: #f7f6f2; border-bottom: 1px solid #eae1d3;">
+                        
+                        <img src="{{ img_list.0 }}" 
+                             alt="{{ product.name }}" 
+                             class="{% if img_list.1 %}primary-img{% else %}w-100 h-100{% endif %}"
+                             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='none'); this.closest('.universal-img-frame').classList.add('img-error');"
+                             style="max-height: 100%; max-width: 100%; object-fit: contain; mix-blend-mode: multiply; transition: opacity 0.4s ease;">
+                             
+                        {% if img_list.1 %}
+                            <img src="{{ img_list.1 }}" 
+                                 alt="{{ product.name }} Alternate View" 
+                                 class="secondary-img"
+                                 onerror="this.style.display='none';"
+                                 style="position: absolute; max-height: 90%; max-width: 90%; object-fit: contain; mix-blend-mode: multiply; opacity: 0; transition: opacity 0.4s ease; top: 50%; left: 50%; transform: translate(-50%, -50%);">
                         {% endif %}
                     </div>
                 {% endwith %}

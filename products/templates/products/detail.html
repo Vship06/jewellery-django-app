@@ -21,14 +21,14 @@
                             <div class="d-flex flex-column gap-2" id="product-thumb-gallery" style="min-width: 70px;">
                                 {% for img_url in img_list %}
                                     <div class="thumb-frame border p-1 {% if forloop.first %}border-dark{% endif %} bg-white" style="cursor: pointer; height: 70px; width: 70px; transition: all 0.3s ease;">
-                                        <img src="{{ img_url }}" alt="{{ product.name }} View {{ forloop.counter }}" class="img-fluid gallery-thumb-item" onclick="swapLuxuryStageImage(this)" style="height: 100%; width: 100%; object-fit: contain; mix-blend-mode: multiply;">
+                                        <img src="{{ img_url }}" alt="{{ product.name }} View {{ forloop.counter }}" class="img-fluid gallery-thumb-item" onclick="swapLuxuryStageImage(this)" onerror="this.closest('.thumb-frame').style.display='none';" style="height: 100%; width: 100%; object-fit: contain; mix-blend-mode: multiply;">
                                     </div>
                                 {% endfor %}
                             </div>
                         {% endif %}
                       
                         <div class="flex-grow-1 d-flex align-items-center justify-content-center bg-white" style="height: 380px; border: 1px solid #eae1d3;">
-                            <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="img-fluid luxury-product-img" id="main-product-image" style="transition: opacity 0.2s ease-in-out; max-height: 90%; object-fit: contain; mix-blend-mode: multiply;">
+                            <img src="{{ img_list.0 }}" alt="{{ product.name }}" class="img-fluid luxury-product-img" id="main-product-image" onerror="this.style.visibility='hidden';" style="transition: opacity 0.2s ease-in-out; max-height: 90%; object-fit: contain; mix-blend-mode: multiply;">
                         </div>
                     </div>
                 {% endwith %}
@@ -54,47 +54,24 @@
 
                 <hr class="mb-4" style="border-color: #eae1d3; opacity: 1;">
 
-                <form id="add-to-vault-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="product_id" value="{{ product.id }}">
-                    <input type="hidden" id="variant-selector" name="variant_id" value="{{ product.variants.first.id }}">
+                <form id="add-to-vault-form" action="{% url 'product-add-cart' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <input type="hidden" id="variant-selector" name="variant_id" value="{{ product.variants.first.id }}">
 
-                    <div class="row g-3 mb-4 align-items-center">
-                        <div class="col-8 col-md-9">
-                            <span class="text-uppercase tracking-widest small text-muted d-block mb-1" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">Selected Configuration:</span>
-                            <span id="active-variant-label" class="font-serif text-dark d-block fw-bold" style="letter-spacing: 0.3px; font-size: 0.9rem;">
-                                {% if product.variants.first.size_or_length %}
-                                    {% if product.category == "RING" or product.category == "BANGLE" or product.category == "BRACELET" %}Size {{ product.variants.first.size_or_length }}
-                                    {% elif product.category == "NECKLACE" or product.category == "CHAIN" %}{{ product.variants.first.size_or_length }} Inches
-                                    {% else %}Standard Sizing {{ product.variants.first.size_or_length }}{% endif %}
-                                {% else %}Signature Arrangement{% endif %}
-                                | {{ product.variants.first.base_metal|default:"Standard" }} 
-                                {% if product.variants.first.purity and product.variants.first.purity != "—" %} | {{ product.variants.first.purity }} {% endif %}
-                            </span>
+                        <div class="d-flex gap-2 align-items-center mb-2">
+                            <button type="submit" class="btn btn-dark rounded-0 text-uppercase tracking-widest py-2 flex-grow-1" style="font-size: 0.8rem; letter-spacing: 1.5px; background-color: #111; height: var(--btn-height-lg);" {% if not product.variants.exists %}disabled{% endif %}>
+                                Add to Shopping Vault
+                            </button>
+                            </div>
+                        
+                        <div id="cart-inline-confirmation" class="alert d-none rounded-0 py-2 px-3 mt-2 border-0 animate-fade-in" style="background-color: #faf4f5; border-left: 3px solid var(--luxury-burgundy) !important;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="font-serif small text-dark" style="font-size: 0.85rem;"><i class="bi bi-check-circle-fill me-2" style="color: var(--luxury-burgundy);"></i> Piece allocated to vault.</span>
+                                <a href="{% url 'cart-view' %}" class="text-uppercase tracking-wider small fw-bold font-serif text-decoration-underline ms-3" style="color: var(--luxury-burgundy); font-size: 0.75rem;">View Cart →</a>
+                            </div>
                         </div>
-                        <div class="col-4 col-md-3">
-                            <label for="quantity-input" class="text-uppercase tracking-widest text-muted d-block mb-1" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px;">Quantity</label>
-                            <input type="number" id="quantity-input" name="quantity" value="1" min="1" max="10" class="form-control rounded-0 py-1 text-center text-dark font-serif shadow-none" style="border-color: #eae1d3; font-size: 0.95rem; height: var(--btn-height-md);">
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2 align-items-center mb-2">
-                        <button type="submit" class="btn btn-dark rounded-0 text-uppercase tracking-widest py-2 flex-grow-1" style="font-size: 0.8rem; letter-spacing: 1.5px; background-color: #111; height: var(--btn-height-lg);" {% if not product.variants.exists %}disabled{% endif %}>
-                            Add to Shopping Vault
-                        </button>
-                        <button type="button" id="detail-wishlist-toggle-btn" class="btn btn-outline-dark rounded-0 d-flex align-items-center justify-content-center" style="border-color: #1a1a1a; width: var(--btn-height-lg); height: var(--btn-height-lg); padding: 0;" title="Save to Wishlist">
-                            {% if product.id in user_wishlist_ids %}<i class="bi bi-heart-fill" id="detail-heart-icon" style="color: var(--luxury-burgundy); font-size: 1.1rem;"></i> 
-                            {% else %}<i class="bi bi-heart" id="detail-heart-icon" style="font-size: 1.1rem;"></i>{% endif %}
-                        </button>
-                    </div>
-
-                    <div id="cart-inline-confirmation" class="alert d-none rounded-0 py-2 px-3 mt-2 mb-3 border-0 animate-fade-in" style="background-color: #faf4f5; border-left: 3px solid var(--luxury-burgundy) !important;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="font-serif small text-dark" style="font-size: 0.85rem;"><i class="bi bi-check-circle-fill me-2" style="color: var(--luxury-burgundy);"></i> Piece allocated to vault.</span>
-                            <a href="{% url 'cart-view' %}" class="text-uppercase tracking-wider small fw-bold font-serif text-decoration-underline ms-3" style="color: var(--luxury-burgundy); font-size: 0.75rem;">View Cart →</a>
-                        </div>
-                    </div>
-                </form>
+                    </form>
 
                 {% if product.variants.exists %}
                     <div class="luxury-spec-accordion-wrapper mt-4">
@@ -130,6 +107,51 @@
                                             <div class="col-7 fw-medium p-0 ps-3" id="spec-pcs">{% if product.variants.first.diamond_pcs %}{{ product.variants.first.diamond_pcs }} Pcs{% else %}—{% endif %}</div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="luxury-spec-accordion-wrapper mt-2">
+                        <button class="btn btn-outline-dark rounded-0 w-100 d-flex justify-content-between align-items-center text-uppercase tracking-widest py-3 px-3 shadow-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#priceBreakupCollapse" aria-expanded="false" aria-controls="priceBreakupCollapse" style="font-size: 0.75rem; border-color: #eae1d3; background-color: #faf8f5; color: #333; font-weight: 600; letter-spacing: 1px;">
+                            <span><i class="bi bi-receipt me-2" style="color: var(--luxury-burgundy);"></i> Price Breakup</span>
+                            <i class="bi bi-chevron-down spec-chevron-icon transition-transform" style="font-size: 0.85rem;"></i>
+                        </button>
+                        <div class="collapse" id="priceBreakupCollapse">
+                            <div class="p-3 border border-top-0 bg-white rounded-0" id="price-breakup-panel" style="border-color: #eae1d3 !important;">
+                                <div class="row g-2 align-items-center text-dark" style="font-size: 0.85rem; padding: 5px 0;">
+                                    <div class="col-6 text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1px;">Metal Charges</div>
+                                    <div class="col-6 fw-medium text-end" id="pb-metal-charges">{{ product.variants.first.metal_charges|default:"—" }}</div>
+                                    <div class="col-12 my-1"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+
+                                    <div class="col-6 text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1px;">Making Charges</div>
+                                    <div class="col-6 fw-medium text-end" id="pb-making-charges">{{ product.variants.first.making_charges|default:"—" }}</div>
+                                    <div class="col-12 my-1"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+
+                                    {% if product.variants.first.making_charges_discount %}
+                                    <div class="col-6 text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1px;">Making Discount</div>
+                                    <div class="col-6 fw-medium text-end" id="pb-making-discount" style="color: #2e8b57;">- {{ product.variants.first.making_charges_discount|default:"—" }}</div>
+                                    <div class="col-12 my-1"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+                                    {% endif %}
+
+                                    <div class="col-12 p-0 m-0" id="pb-diamond-group" style="{% if not product.variants.first.diamond_charges or product.variants.first.diamond_carat == 'None' %}display: none;{% endif %}">
+                                        <div class="row g-2 align-items-center m-0 w-100">
+                                            <div class="col-6 text-uppercase tracking-widest text-muted p-0" style="font-size: 0.65rem; letter-spacing: 1px;">Diamond Charges</div>
+                                            <div class="col-6 fw-medium text-end p-0 pe-0" id="pb-diamond-charges">{{ product.variants.first.diamond_charges|default:"—" }}</div>
+                                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+                                            {% if product.variants.first.diamond_charges_discount %}
+                                            <div class="col-6 text-uppercase tracking-widest text-muted p-0" style="font-size: 0.65rem; letter-spacing: 1px;">Diamond Discount</div>
+                                            <div class="col-6 fw-medium text-end p-0 pe-0" id="pb-diamond-discount" style="color: #2e8b57;">- {{ product.variants.first.diamond_charges_discount|default:"—" }}</div>
+                                            <div class="col-12 my-1 p-0"><hr class="m-0" style="color: #eae1d3; opacity: 0.4;"></div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-6 text-uppercase tracking-widest text-muted" style="font-size: 0.65rem; letter-spacing: 1px;">Tax (GST)</div>
+                                    <div class="col-6 fw-medium text-end" id="pb-tax">{{ product.variants.first.tax|default:"—" }}</div>
+                                    <div class="col-12 my-2"><hr class="m-0" style="color: #eae1d3; opacity: 1;"></div>
+
+                                    <div class="col-6 text-uppercase tracking-widest fw-bold" style="font-size: 0.7rem; letter-spacing: 1px; color: #111;">Total Price</div>
+                                    <div class="col-6 fw-bold text-end font-serif" id="pb-total-price" style="font-size: 1rem; color: var(--luxury-burgundy);">Rs. {{ product.variants.first.price|floatformat:2 }}</div>
                                 </div>
                             </div>
                         </div>
@@ -202,11 +224,12 @@
     }
     function stopImageAutoScroll() { if (autoScrollTimer) clearInterval(autoScrollTimer); }
 
-    const productVariants = [
-        {% for var in product.variants.all %}{ id: "{{ var.id }}", price: "{{ var.price|floatformat:2 }}", metal: "{{ var.base_metal|default:'Standard'|escapejs }}", purity: "{{ var.purity|default:'Standard'|escapejs }}", size: "{{ var.size_or_length|default:'Standard'|escapejs }}", diamond_carat: "{{ var.diamond_carat|default:''|escapejs }}", diamond_clarity: "{{ var.diamond_clarity|default:''|escapejs }}", diamond_color: "{{ var.diamond_color|default:''|escapejs }}", diamond_pcs: "{{ var.diamond_pcs|default:''|escapejs }}", gross_weight: "{{ var.gross_weight|default:''|escapejs }}", diamond_quality: "{{ var.diamond_clarity|default:''|escapejs }}{% if var.diamond_clarity and var.diamond_color %}-{% endif %}{{ var.diamond_color|default:''|escapejs }}" },{% endfor %}
+   const productVariants = [
+        {% for var in product.variants.all %}{ id: "{{ var.id }}", price: "{{ var.price|floatformat:2 }}", metal: "{{ var.base_metal|default:'Standard'|escapejs }}", purity: "{{ var.purity|default:'Standard'|escapejs }}", size: "{{ var.size_or_length|default:'Standard'|escapejs }}", diamond_carat: "{{ var.diamond_carat|default:''|escapejs }}", diamond_clarity: "{{ var.diamond_clarity|default:''|escapejs }}", diamond_color: "{{ var.diamond_color|default:''|escapejs }}", diamond_pcs: "{{ var.diamond_pcs|default:''|escapejs }}", gross_weight: "{{ var.gross_weight|default:''|escapejs }}", diamond_quality: "{{ var.diamond_clarity|default:''|escapejs }}{% if var.diamond_clarity and var.diamond_color %}-{% endif %}{{ var.diamond_color|default:''|escapejs }}", metal_charges: "{{ var.metal_charges|default:''|escapejs }}", making_charges: "{{ var.making_charges|default:''|escapejs }}", making_charges_discount: "{{ var.making_charges_discount|default:'0'|escapejs }}", diamond_charges: "{{ var.diamond_charges|default:''|escapejs }}", diamond_charges_discount: "{{ var.diamond_charges_discount|default:'0'|escapejs }}", tax: "{{ var.tax|default:''|escapejs }}" },{% endfor %}
     ];
 
     let initialDiamondQuality = "{% if product.variants.exists %}{{ product.variants.first.diamond_clarity|default:''|escapejs }}{% if product.variants.first.diamond_clarity and product.variants.first.diamond_color %}-{% endif %}{{ product.variants.first.diamond_color|default:''|escapejs }}{% endif %}";
+    
     let currentSelection = {
         metal: "{% if product.variants.exists %}{{ product.variants.first.base_metal|default:'Standard'|escapejs }}{% else %}Standard{% endif %}",
         purity: "{% if product.variants.exists %}{{ product.variants.first.purity|default:'Standard'|escapejs }}{% else %}Standard{% endif %}",
@@ -221,6 +244,11 @@
         const galleryContainer = document.getElementById("product-thumb-gallery");
         if (galleryContainer) { galleryContainer.addEventListener("mouseenter", stopImageAutoScroll); galleryContainer.addEventListener("mouseleave", startImageAutoScroll); }
         if (productVariants.length > 0) { initCustomizationUI(); }
+        
+        // FIXED: Explicitly run the matcher immediately after rendering the UI 
+        // to force the modal price container to light up with your data straight away!
+        findMatchingVariant();
+        
         const activeForm = document.getElementById("add-to-vault-form");
         if (activeForm) { activeForm.addEventListener("submit", function() { const inlineAlert = document.getElementById("cart-inline-confirmation"); if (inlineAlert) { inlineAlert.classList.remove("d-none"); } }); }
     });
@@ -254,14 +282,32 @@
             });
         } else { sizeContainer.innerHTML = '<span class="text-muted small">Standard Sizing Only</span>'; }
 
-        const diamondSection = document.getElementById('diamond-quality-section');
+       const diamondSection = document.getElementById('diamond-quality-section');
         const diamondSelect = document.getElementById('diamond-quality-select');
+        
         if (uniqueDiamondQualities.length > 0) {
-            diamondSection.style.display = 'block'; diamondSelect.innerHTML = ''; 
-            uniqueDiamondQualities.forEach(quality => { diamondSelect.innerHTML += `<option value="${quality}" ${quality === currentSelection.diamond_quality ? 'selected' : ''}>${quality}</option>`; });
-            diamondSelect.addEventListener('change', (e) => updateSelection('diamond_quality', e.target.value, null));
+            // FIXED: If there's ONLY 1 option, hide the dropdown input but show the configuration data as flat text
+            if (uniqueDiamondQualities.length === 1) {
+                diamondSection.style.display = 'block';
+                // Replace the dropdown select frame internally with a premium flat typography layout label
+                diamondSection.innerHTML = `
+                    <label class="text-muted small text-uppercase tracking-widest mb-2" style="font-size: 0.7rem; font-weight: 600;">Diamond Quality</label>
+                    <div class="font-serif text-dark fw-medium ps-1" style="font-size: 0.95rem;">${uniqueDiamondQualities[0]}</div>
+                    <input type="hidden" id="diamond-quality-select" value="${uniqueDiamondQualities[0]}">
+                `;
+            } else {
+                // If there are multiple configurations, restore standard dropdown selector metrics
+                diamondSection.style.display = 'block';
+                diamondSelect.innerHTML = ''; 
+                uniqueDiamondQualities.forEach(quality => {
+                    diamondSelect.innerHTML += `<option value="${quality}" ${quality === currentSelection.diamond_quality ? 'selected' : ''}>${quality}</option>`;
+                });
+                diamondSelect.addEventListener('change', (e) => updateSelection('diamond_quality', e.target.value, null));
+            }
+        } else {
+            // Hide section entirely if no gemstones are present on the model
+            if (diamondSection) diamondSection.style.display = 'none';
         }
-        findMatchingVariant();
     }
 
     function updateSelection(type, value, element) {
@@ -303,6 +349,22 @@
             if(document.getElementById('spec-color')) document.getElementById('spec-color').innerText = matchedVariant.diamond_color || '—';
             if(document.getElementById('spec-pcs')) document.getElementById('spec-pcs').innerText = matchedVariant.diamond_pcs ? `${matchedVariant.diamond_pcs} Pcs` : '—';
         } else { diamondContainer.style.display = 'none'; }
+
+        // Update Price Breakup panel
+        if(document.getElementById('pb-metal-charges')) document.getElementById('pb-metal-charges').innerText = matchedVariant.metal_charges ? `Rs. ${parseFloat(matchedVariant.metal_charges).toLocaleString('en-IN', {minimumFractionDigits:2})}` : '—';
+        if(document.getElementById('pb-making-charges')) document.getElementById('pb-making-charges').innerText = matchedVariant.making_charges ? `Rs. ${parseFloat(matchedVariant.making_charges).toLocaleString('en-IN', {minimumFractionDigits:2})}` : '—';
+        if(document.getElementById('pb-making-discount')) document.getElementById('pb-making-discount').innerText = matchedVariant.making_charges_discount && parseFloat(matchedVariant.making_charges_discount) > 0 ? `- Rs. ${parseFloat(matchedVariant.making_charges_discount).toLocaleString('en-IN', {minimumFractionDigits:2})}` : '—';
+        if(document.getElementById('pb-tax')) document.getElementById('pb-tax').innerText = matchedVariant.tax ? `Rs. ${parseFloat(matchedVariant.tax).toLocaleString('en-IN', {minimumFractionDigits:2})}` : '—';
+        if(document.getElementById('pb-total-price')) document.getElementById('pb-total-price').innerText = `Rs. ${parseFloat(matchedVariant.price).toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+        const pbDiamondGroup = document.getElementById('pb-diamond-group');
+        if (pbDiamondGroup) {
+            if (matchedVariant.diamond_charges && matchedVariant.diamond_carat && matchedVariant.diamond_carat !== 'None') {
+                pbDiamondGroup.style.display = 'block';
+                if(document.getElementById('pb-diamond-charges')) document.getElementById('pb-diamond-charges').innerText = `Rs. ${parseFloat(matchedVariant.diamond_charges).toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+                if(document.getElementById('pb-diamond-discount')) document.getElementById('pb-diamond-discount').innerText = matchedVariant.diamond_charges_discount && parseFloat(matchedVariant.diamond_charges_discount) > 0 ? `- Rs. ${parseFloat(matchedVariant.diamond_charges_discount).toLocaleString('en-IN', {minimumFractionDigits:2})}` : '—';
+            } else { pbDiamondGroup.style.display = 'none'; }
+        }
+
         var modal = bootstrap.Modal.getInstance(document.getElementById('customizationModal')); if (modal) modal.hide();
     }
 </script>

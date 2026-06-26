@@ -98,10 +98,14 @@ class CartItem(models.Model):
         ProductVariant, on_delete=models.CASCADE, related_name="variant_cart_items"
     )
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="cart_items")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="cart_items", null=True, blank=True
+    )
+
+    session_key = models.CharField(max_length=40, null=True, blank=True)
 
     quantity = models.IntegerField(default=1)
 
     status = models.CharField(max_length=15, default="cart")
 
-    added_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
