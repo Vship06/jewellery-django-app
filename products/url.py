@@ -28,7 +28,4 @@ urlpatterns = [
         {"type": "wishlist"},
         name="wishlist-view",
     ),
-    path(
-        "product/payment", product_views.PaymentView.as_view(), name="product-payment"
-    ),
 ]

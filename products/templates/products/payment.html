@@ -5,23 +5,56 @@
 {% block title %}Complete Your Vault Acquisition | Aurora{% endblock %}
 
 {% block content %}
+<style>
+    /* Add specific styling to make the payment options smaller and more compact */
+    .payment-option {
+        padding: 1rem !important; 
+        text-align: center;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: white;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .payment-option i {
+        font-size: 1.5rem !important; 
+        margin-bottom: 0.5rem;
+    }
+
+    .payment-option h6 {
+        font-size: 0.85rem !important; 
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    .btn-check:checked + .payment-option {
+        border-color: var(--luxury-gold);
+        background-color: rgba(212, 175, 55, 0.05);
+        box-shadow: 0 0 0 1px var(--luxury-gold);
+    }
+</style>
+
 <div class="container py-5">
-    <!-- Checkout Progress -->
     <div class="row justify-content-center mb-5">
         <div class="col-lg-10">
             <div class="d-flex justify-content-between align-items-center luxury-progress">
                 <div class="text-center">
                     <div class="progress-icon completed"><i class="bi bi-bag"></i></div>
-                    <small>Shopping Vault</small>
+                    <small>Shopping</small>
                 </div>
                 <div class="progress-line completed"></div>
                 <div class="text-center">
-                    <div class="progress-icon completed"><i class="bi bi-geo-alt"></i></div>
+                    <div class="progress-icon active" id="step-1-icon"><i class="bi bi-geo-alt"></i></div>
                     <small>Delivery</small>
                 </div>
-                <div class="progress-line active"></div>
+                <div class="progress-line" id="progress-line-2"></div>
                 <div class="text-center">
-                    <div class="progress-icon active"><i class="bi bi-credit-card"></i></div>
+                    <div class="progress-icon" id="step-2-icon"><i class="bi bi-credit-card"></i></div>
                     <small>Payment</small>
                 </div>
             </div>
@@ -29,116 +62,169 @@
     </div>
 
     <div class="row g-5">
-        <!-- LEFT: Payment Form -->
         <div class="col-lg-7">
             <div class="checkout-card">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h3 class="font-serif mb-1">Secure Payment</h3>
-                        <small class="text-muted">256-bit SSL encrypted checkout</small>
-                    </div>
-                    <div class="text-end text-success small">
-                        <i class="bi bi-shield-lock-fill"></i> Secure
-                    </div>
-                </div>
-
-                <form id="payment-execution-form" method="POST" action="{% url 'product-payment' %}">
+                <form id="payment-execution-form" method="POST" action="{% url 'order-payment' %}">
                     {% csrf_token %}
-                    <div class="row g-3 mb-5">
-                        <div class="col-md-6">
-                            <input class="btn-check" type="radio" id="pay_card" name="payment_method" value="card" checked>
-                            <label class="payment-option w-100" for="pay_card">
-                                <i class="bi bi-credit-card-2-front fs-2"></i>
-                                <h6 class="mt-3 mb-1">Credit / Debit Card</h6>
-                                <small class="text-muted">Visa • Mastercard • RuPay</small>
-                            </label>
+                    
+                    <!-- STEP 1: SHIPPING ADDRESS -->
+                    <div id="shipping-section">
+                        <h3 class="font-serif mb-4">Shipping Details</h3>
+                        <div class="row g-3">
+                            <div class="col-12"><input id="ship_name" name="full_name" class="form-control luxury-input shipping-field" type="text" placeholder="Full Name" required></div>
+                            <div class="col-12"><input id="ship_address" name="address" class="form-control luxury-input shipping-field" type="text" placeholder="Address Line 1" required></div>
+                            <div class="col-md-6"><input id="ship_city" name="city" class="form-control luxury-input shipping-field" type="text" placeholder="City" required></div>
+                            <div class="col-md-6"><input id="ship_pin" name="pincode" class="form-control luxury-input shipping-field" type="text" placeholder="PIN Code" required></div>
+                            <div class="col-12"><input id="ship_phone" name="phone" class="form-control luxury-input shipping-field" type="tel" placeholder="Phone Number" required></div>
                         </div>
-                        <div class="col-md-6">
-                            <input class="btn-check" type="radio" id="pay_upi" name="payment_method" value="upi">
-                            <label class="payment-option w-100" for="pay_upi">
-                                <i class="bi bi-phone fs-2"></i>
-                                <h6 class="mt-3 mb-1">UPI Payment</h6>
-                                <small class="text-muted">Google Pay • PhonePe • Paytm</small>
-                            </label>
-                        </div>
+                        <button type="button" class="btn btn-dark rounded-0 mt-5 w-100 py-3" onclick="validateAndProceed()">
+                            Continue to Payment
+                        </button>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small text-uppercase">Cardholder Name</label>
-                        <input class="form-control luxury-input" type="text" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small text-uppercase">Card Number</label>
-                        <input class="form-control luxury-input" placeholder="0000 0000 0000 0000">
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <label class="form-label small text-uppercase">Expiry</label>
-                            <input class="form-control luxury-input" placeholder="MM / YY">
+                    <!-- STEP 2: PAYMENT SECTION (HIDDEN BY DEFAULT) -->
+                    <div id="payment-section" class="d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="font-serif">Secure Payment</h3>
+                            <button type="button" class="btn btn-link text-muted p-0" onclick="showShippingSection()">← Back</button>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small text-uppercase">CVV</label>
-                            <input class="form-control luxury-input" type="password" placeholder="•••">
+                        
+                        <div class="row g-2 mb-4">
+                            <div class="col-md-4">
+                                <input class="btn-check payment-method-radio" type="radio" id="pay_card" name="payment_method" value="card" checked>
+                                <label class="payment-option w-100" for="pay_card">
+                                    <i class="bi bi-credit-card-2-front"></i>
+                                    <h6>Card</h6>
+                                </label>
+                            </div>
+                            <div class="col-md-4">
+                                <input class="btn-check payment-method-radio" type="radio" id="pay_upi" name="payment_method" value="upi">
+                                <label class="payment-option w-100" for="pay_upi">
+                                    <i class="bi bi-phone"></i>
+                                    <h6>UPI</h6>
+                                </label>
+                            </div>
+                            <div class="col-md-4">
+                                <input class="btn-check payment-method-radio" type="radio" id="pay_cod" name="payment_method" value="cod">
+                                <label class="payment-option w-100" for="pay_cod">
+                                    <i class="bi bi-box-seam"></i>
+                                    <h6>Cash on Delivery</h6>
+                                </label>
+                            </div>
                         </div>
+
+                        <!-- Card details container (Toggled via JS) -->
+                        <div id="card-details">
+                            <div class="mb-3"><input class="form-control luxury-input" type="text" placeholder="Cardholder Name"></div>
+                            <div class="mb-3"><input class="form-control luxury-input" placeholder="0000 0000 0000 0000"></div>
+                            <div class="row">
+                                <div class="col-6"><input class="form-control luxury-input" placeholder="MM / YY"></div>
+                                <div class="col-6"><input class="form-control luxury-input" type="password" placeholder="CVV"></div>
+                            </div>
+                        </div>
+
+                        <button class="btn luxury-pay-btn mt-5 w-100" type="submit" id="final-submit-btn">
+                            Complete Secure Payment (Rs. {{ cart_total|floatformat:2 }})
+                        </button>
                     </div>
-                    <button class="btn luxury-pay-btn mt-5 w-100" type="submit">
-                        <i class="bi bi-lock-fill me-2"></i> Complete Secure Payment
-                        <div class="small mt-1">Rs. {{ cart_total|floatformat:2 }}</div>
-                    </button>
                 </form>
             </div>
         </div>
 
-        <!-- RIGHT: Order Summary -->
         <div class="col-lg-5">
-            <!-- FIX: Removed sticky-top class and added inline position: sticky; -->
             <div class="checkout-card" style="position: sticky; top: 120px;">
                 <h4 class="font-serif mb-4">Order Summary</h4>
-
                 {% for item in cart_items %}
                 <div class="d-flex mb-4">
-                    <!-- FIX: Updated src to use image_links JSON structure -->
-                    <img src="{{ item.product.image_links.0 }}"
-                         onerror="this.style.visibility='hidden';"
-                         width="70" height="70"
-                         class="border me-3 object-fit-cover">
-
+                    <img src="{{ item.product.image_links.0 }}" width="70" height="70" class="border me-3 object-fit-cover">
                     <div class="flex-grow-1">
                         <h6 class="mb-1">{{ item.product.name }}</h6>
                         <small class="text-muted">Qty {{ item.quantity }}</small>
                     </div>
-                    <div class="fw-semibold">
-                        Rs. {{ item.productvariant.price|multiply:item.quantity|floatformat:2 }}
-                    </div>
+                    <div class="fw-semibold">Rs. {{ item.productvariant.price|multiply:item.quantity|floatformat:2 }}</div>
                 </div>
                 {% endfor %}
-
-                <hr>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Subtotal</span>
-                    <span>Rs. {{ cart_total|floatformat:2 }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Shipping</span>
-                    <span class="text-success">Free</span>
-                </div>
                 <hr>
                 <div class="d-flex justify-content-between">
                     <h5>Total</h5>
                     <h4 style="color:var(--luxury-burgundy);">Rs. {{ cart_total|floatformat:2 }}</h4>
                 </div>
             </div>
-
-            <div class="checkout-card mt-4">
-                <h6 class="mb-3">Why Shop With Aurora?</h6>
-                <div class="small text-muted">
-                    <p><i class="bi bi-patch-check-fill text-success me-2"></i> BIS Hallmarked Gold</p>
-                    <p><i class="bi bi-gem text-success me-2"></i> Certified Diamonds</p>
-                    <p><i class="bi bi-truck text-success me-2"></i> Free Insured Delivery</p>
-                    <p class="mb-0"><i class="bi bi-shield-lock text-success me-2"></i> Secure Encrypted Payment</p>
-                </div>
-            </div>
         </div>
     </div>
 </div>
+
+<script>
+    // 1. Payment Mode Toggle Logic
+    document.querySelectorAll('.payment-method-radio').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const cardDetails = document.getElementById('card-details');
+            const submitBtn = document.getElementById('final-submit-btn');
+            
+            if (this.value === 'card') {
+                cardDetails.style.display = 'block';
+                submitBtn.innerHTML = 'Complete Secure Payment (Rs. {{ cart_total|floatformat:2 }})';
+            } else if (this.value === 'upi') {
+                cardDetails.style.display = 'none';
+                submitBtn.innerHTML = 'Proceed with UPI (Rs. {{ cart_total|floatformat:2 }})';
+            } else if (this.value === 'cod') {
+                cardDetails.style.display = 'none';
+                submitBtn.innerHTML = 'Place Order - Pay on Delivery (Rs. {{ cart_total|floatformat:2 }})';
+            }
+        });
+    });
+
+    // 2. Multi-step Validation
+    function validateAndProceed() {
+        const shippingInputs = document.querySelectorAll('.shipping-field[required]');
+        let isValid = true;
+        
+        for (const input of shippingInputs) {
+            if (!input.checkValidity()) {
+                input.reportValidity();
+                isValid = false;
+                break;
+            }
+        }
+
+        if (isValid) {
+            showPaymentSection();
+        }
+    }
+
+    function showPaymentSection() {
+        const shipping = document.getElementById('shipping-section');
+        const payment = document.getElementById('payment-section');
+        const line = document.getElementById('progress-line-2');
+        const icon2 = document.getElementById('step-2-icon');
+        
+        shipping.classList.add('d-none');
+        payment.classList.remove('d-none');
+        line.classList.add('completed');
+        icon2.classList.add('active');
+        
+        document.querySelectorAll('.shipping-field').forEach(field => {
+            field.dataset.wasRequired = field.hasAttribute('required');
+            field.removeAttribute('required');
+        });
+    }
+
+    function showShippingSection() {
+        const shipping = document.getElementById('shipping-section');
+        const payment = document.getElementById('payment-section');
+        const line = document.getElementById('progress-line-2');
+        const icon2 = document.getElementById('step-2-icon');
+        
+        shipping.classList.remove('d-none');
+        payment.classList.add('d-none');
+        line.classList.remove('completed');
+        icon2.classList.remove('active');
+        
+        document.querySelectorAll('.shipping-field').forEach(field => {
+            if(field.dataset.wasRequired === "true") {
+                field.setAttribute('required', 'required');
+            }
+        });
+    }
+</script>
 {% endblock %}

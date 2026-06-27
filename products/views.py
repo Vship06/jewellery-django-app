@@ -18,20 +18,7 @@ from .constants import (
     DEFAULT_PRICE_MAX,
 )
 
-
-def get_user_cart(request, status="cart"):
-    if request.user.is_authenticated:
-        return CartItem.objects.filter(user=request.user, status=status)
-    else:
-        session_key = get_session_key(request)
-        return CartItem.objects.filter(session_key=session_key, status=status)
-
-
-def get_session_key(request):
-    if not request.session.session_key:
-        request.session.create()
-    request.session.modified = True
-    return request.session.session_key
+from .utils import get_user_cart, get_session_key
 
 
 class ProductListView(ListView):
@@ -47,7 +34,6 @@ class ProductListView(ListView):
     def _update_session_state(self, request):
         session = request.session
 
-        # 1. Clear Session
         if request.GET.get("clear") == "true":
             keys_to_clear = [
                 "selected_metals",
@@ -66,40 +52,71 @@ class ProductListView(ListView):
             session.modified = True
             return
 
-        # 2. Update Session
-        if request.GET:
-            list_params = {
-                "metal": "selected_metals",
-                "mcolor": "selected_colors",
-                "purity": "selected_purities",
-                "clarity": "selected_clarities",
-                "dcolor": "selected_dcolors",
-                "sub": "selected_sub_collection",
-            }
+        # NEW LOGIC: Detect if this is a filter form submission
+        # 'price_min' is an input field, so it is ALWAYS sent when the form is submitted.
+        is_filter_submit = "price_min" in request.GET
+
+        list_params = {
+            "metal": "selected_metals",
+            "mcolor": "selected_colors",
+            "purity": "selected_purities",
+            "clarity": "selected_clarities",
+            "dcolor": "selected_dcolors",
+            "sub": "selected_sub_collection",
+        }
+
+        if is_filter_submit:
+            # Overwrite session with whatever is in GET (if unchecked, it returns an empty list [])
+            for get_key, session_key in list_params.items():
+                session[session_key] = request.GET.getlist(get_key)
+
+            session["current_price_min"] = int(
+                request.GET.get("price_min", DEFAULT_PRICE_MIN)
+            )
+            session["current_price_max"] = int(
+                request.GET.get("price_max", DEFAULT_PRICE_MAX)
+            )
+            session["has_diamonds"] = request.GET.get("diamonds")
+        else:
+            # For standard pagination clicks, only update what is explicitly passed
             for get_key, session_key in list_params.items():
                 if get_key in request.GET:
                     session[session_key] = request.GET.getlist(get_key)
 
-            if "price_min" in request.GET:
-                session["current_price_min"] = int(
-                    request.GET.get("price_min", DEFAULT_PRICE_MIN)
-                )
-            if "price_max" in request.GET:
-                session["current_price_max"] = int(
-                    request.GET.get("price_max", DEFAULT_PRICE_MAX)
-                )
-            if "diamonds" in request.GET:
-                session["has_diamonds"] = request.GET.get("diamonds")
-            if "sort" in request.GET:
-                session["sort"] = request.GET.get("sort")
+        # Sort is handled independently from the filter form
+        if "sort" in request.GET:
+            session["sort"] = request.GET.get("sort")
 
-            session.modified = True
+        session.modified = True
 
     def get_queryset(self):
         session = self.request.session
         queryset = Product.objects.all().annotate(
             order_min_price=Min("variants__price")
         )
+
+        price_min = session.get("current_price_min", DEFAULT_PRICE_MIN)
+        price_max = session.get("current_price_max", DEFAULT_PRICE_MAX)
+
+        category_map = {
+            "finger ring": "ring",
+            "nose pin": "nosepin",
+            "earrings": "earring",
+            "bangle": "bangle",
+            "bracelet": "bracelet",
+            "necklace": "necklace",
+            "chain": "chain",
+            "pendant": "pendant",
+        }
+
+        filter_mapping = {
+            "selected_metals": "variants__base_metal__in",
+            "selected_purities": "variants__purity__in",
+            "selected_colors": "variants__metal_color__in",
+            "selected_clarities": "variants__diamond_clarity__in",
+            "selected_dcolors": "variants__diamond_color__in",
+            "selected_sub_collection": "description__in",
+        }
 
         # 1. Sorting
         sort = session.get("sort", "")
@@ -113,21 +130,9 @@ class ProductListView(ListView):
         # 2. Search & Robust Category Filters
         category_slug = self.request.GET.get("category")
         if category_slug and category_slug != "all":
-            # Normalize the input (e.g., 'NOSE PIN' -> 'nose pin')
+
             slug_lower = category_slug.strip().lower()
 
-            # This map bridges your CONSTANT names to your MODEL DB keys
-            category_map = {
-                "finger ring": "ring",
-                "nose pin": "nosepin",
-                "earrings": "earring",
-                "bangle": "bangle",
-                "bracelet": "bracelet",
-                "necklace": "necklace",
-                "chain": "chain",
-                "pendant": "pendant",
-            }
-            # Fallback to slug_lower if it's already a clean key
             db_category = category_map.get(slug_lower, slug_lower)
             queryset = queryset.filter(category__iexact=db_category)
 
@@ -139,14 +144,7 @@ class ProductListView(ListView):
             )
 
         # 3. Dynamic Attribute Filters
-        filter_mapping = {
-            "selected_metals": "variants__base_metal__in",
-            "selected_purities": "variants__purity__in",
-            "selected_colors": "variants__metal_color__in",
-            "selected_clarities": "variants__diamond_clarity__in",
-            "selected_dcolors": "variants__diamond_color__in",
-            "selected_sub_collection": "description__in",
-        }
+
         active_filters = {
             db_lookup: session.get(session_key)
             for session_key, db_lookup in filter_mapping.items()
@@ -156,14 +154,10 @@ class ProductListView(ListView):
             queryset = queryset.filter(**active_filters)
 
         # 4. Safe Price & Diamond Filters
-        price_min = session.get("current_price_min", DEFAULT_PRICE_MIN)
-        price_max = session.get("current_price_max", DEFAULT_PRICE_MAX)
 
         is_price_filtered = False
         variant_filter = Q()
 
-        # Only apply price filters if they differ from the defaults!
-        # This stops variantless products (like chains/bracelets) from disappearing.
         if price_min is not None and int(price_min) > DEFAULT_PRICE_MIN:
             variant_filter &= Q(variants__price__gte=price_min)
             is_price_filtered = True
@@ -178,7 +172,7 @@ class ProductListView(ListView):
                 matched_price=Min("variants__price", filter=variant_filter)
             )
         else:
-            # Keep annotation for the template, but don't filter out products
+
             queryset = queryset.annotate(matched_price=Min("variants__price"))
 
         if session.get("has_diamonds") == "1":
@@ -232,7 +226,6 @@ class ProductListView(ListView):
         )
         context["has_diamonds"] = session.get("has_diamonds")
 
-        # ADDED: Send session sort to template so it doesn't rely on stale request.GET URLs
         context["current_sort"] = session.get("sort", "")
 
         if self.request.user.is_authenticated:
@@ -446,29 +439,3 @@ def remove_from(request):
         return JsonResponse(
             {"status": "error", "message": "Item not found in vault."}, status=404
         )
-
-
-class PaymentView(View):
-    def get(self, request):
-        cart_items = get_user_cart(request, status="cart").select_related(
-            "product", "productvariant"
-        )
-        if not cart_items.exists():
-            return redirect("cart-view")
-
-        grand_total = 0
-        for item in cart_items:
-            source = item.productvariant if item.productvariant else item.product
-            if source and source.price:
-                grand_total += float(source.price) * item.quantity
-
-        context = {"cart_items": cart_items, "cart_total": grand_total}
-        return render(request, "products/payment.html", context)
-
-    def post(self, request):
-        cart_items = get_user_cart(request, status="cart")
-        if not cart_items.exists():
-            return redirect("cart-view")
-        cart_items.update(status="ordered")
-        messages.success(request, "Payment successful! Your order has been placed.")
-        return redirect("product-home")

@@ -68,22 +68,16 @@
                             <button type="submit" class="btn btn-dark rounded-0 text-uppercase tracking-widest py-2 flex-grow-1" style="font-size: 0.8rem; letter-spacing: 1.5px; background-color: #111; height: var(--btn-height-lg);" {% if not product.variants.exists %}disabled{% endif %}>
                                 Add to Shopping Vault
                             </button>
-                            {% if request.user.is_authenticated %}
-                                <button type="button" class="btn btn-outline-dark rounded-0 px-3 detail-wishlist-btn shadow-none" 
-                                        data-product-id="{{ product.id }}" 
-                                        data-variant-id="{{ product.variants.first.id }}"
-                                        title="{% if product.id in user_wishlist_ids %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}"
-                                        style="height: var(--btn-height-lg); width: 48px; border-color: #ddd; flex-shrink: 0;">
+                             {% if request.user.is_authenticated %}
+                                <button type="button" class="btn p-1 card-wishlist-btn shadow-none" data-product-id="{{ product.id }}" data-variant-id="{{ product.variants.first.id }}">
                                     {% if product.id in user_wishlist_ids %}
-                                        <i class="bi bi-heart-fill" style="color: #800020; font-size: 1.1rem;"></i>
+                                        <i class="bi bi-heart-fill" style="color: #800020; font-size: 1rem;"></i>
                                     {% else %}
-                                        <i class="bi bi-heart text-muted" style="font-size: 1.1rem;"></i>
+                                        <i class="bi bi-heart text-muted" style="font-size: 1rem;"></i>
                                     {% endif %}
                                 </button>
                             {% else %}
-                                <a href="{% url 'user-login' %}" class="btn btn-outline-dark rounded-0 px-3 shadow-none text-decoration-none" style="height: var(--btn-height-lg); width: 48px; border-color: #ddd; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-heart text-muted" style="font-size: 1.1rem; opacity: 0.45;"></i>
-                                </a>
+                                <a href="{% url 'user-login' %}" class="btn p-1 text-decoration-none"><i class="bi bi-heart text-muted" style="font-size: 1rem; opacity: 0.45;"></i></a>
                             {% endif %}
                             </div>
                         

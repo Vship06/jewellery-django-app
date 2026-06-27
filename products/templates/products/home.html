@@ -16,13 +16,13 @@
                 </button>
 
                 <div class="dropdown">
-                    <!-- REVISED: Button uses current_sort to remain synced with backend session truth -->
+                  
                     <button id="sortDropdownBtn" class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase tracking-widest dropdown-toggle" 
                             type="button" data-bs-toggle="dropdown" aria-expanded="false"
                             style="font-size: 0.75rem; letter-spacing: 2px; white-space: nowrap; border: 1px solid #222; height: var(--btn-height-md);">
                         <i class="bi bi-sort-down me-2"></i> 
-                        {% if request.GET.sort == 'descending' %}Price: High to Low
-                        {% elif request.GET.sort == 'ascending' %}Price: Low to High
+                        {% if current_sort == 'descending' %}Price: High to Low
+                        {% elif current_sort == 'ascending' %}Price: Low to High
                         {% else %}Sort{% endif %}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end rounded-0 border-dark m-0 p-0" style="font-size: 0.75rem; letter-spacing: 1px;">
