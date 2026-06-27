@@ -93,7 +93,24 @@ class Command(BaseCommand):
 
                 product_name = safe_str(row.get("name"))
                 parent_sku = safe_str(row.get("sku"))
-                category_name = safe_str(row.get("product_type")) or "Luxury Jewelry"
+
+                # AFTER
+                CATEGORY_MAP = {
+                    "FINGER RING": "ring",
+                    "RING": "ring",
+                    "NOSE PIN": "nosepin",
+                    "NOSEPIN": "nosepin",
+                    "EARRINGS": "earring",
+                    "EARRING": "earring",
+                    "BANGLE": "bangle",
+                    "BRACELET": "bracelet",
+                    "NECKLACE": "necklace",
+                    "CHAIN": "chain",
+                    "PENDANT": "pendant",
+                }
+                raw_type = safe_str(row.get("product_type")).strip().upper()
+                category_name = CATEGORY_MAP.get(raw_type, "ring")
+
                 description_text = (
                     safe_str(row.get("collection")) or "An exquisite artisan selection."
                 )

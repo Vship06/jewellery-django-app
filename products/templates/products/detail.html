@@ -42,6 +42,11 @@
 
                 <div class="luxury-price-display mb-3">
                     <h3 class="font-serif" id="dynamic-main-price" style="font-size: 1.45rem; font-weight: 600; color: var(--luxury-burgundy);">
+                        <p id="active-variant-label"
+                            class="text-muted mt-2 mb-0"
+                            style="font-size:0.9rem;">
+                            Standard Configuration
+                        </p>
                         {% if product.variants.exists %}Rs. {{ product.variants.first.price|floatformat:2 }}{% else %}Rs. 0.00{% endif %}
                     </h3>
                 </div>
@@ -63,6 +68,23 @@
                             <button type="submit" class="btn btn-dark rounded-0 text-uppercase tracking-widest py-2 flex-grow-1" style="font-size: 0.8rem; letter-spacing: 1.5px; background-color: #111; height: var(--btn-height-lg);" {% if not product.variants.exists %}disabled{% endif %}>
                                 Add to Shopping Vault
                             </button>
+                            {% if request.user.is_authenticated %}
+                                <button type="button" class="btn btn-outline-dark rounded-0 px-3 detail-wishlist-btn shadow-none" 
+                                        data-product-id="{{ product.id }}" 
+                                        data-variant-id="{{ product.variants.first.id }}"
+                                        title="{% if product.id in user_wishlist_ids %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}"
+                                        style="height: var(--btn-height-lg); width: 48px; border-color: #ddd; flex-shrink: 0;">
+                                    {% if product.id in user_wishlist_ids %}
+                                        <i class="bi bi-heart-fill" style="color: #800020; font-size: 1.1rem;"></i>
+                                    {% else %}
+                                        <i class="bi bi-heart text-muted" style="font-size: 1.1rem;"></i>
+                                    {% endif %}
+                                </button>
+                            {% else %}
+                                <a href="{% url 'user-login' %}" class="btn btn-outline-dark rounded-0 px-3 shadow-none text-decoration-none" style="height: var(--btn-height-lg); width: 48px; border-color: #ddd; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-heart text-muted" style="font-size: 1.1rem; opacity: 0.45;"></i>
+                                </a>
+                            {% endif %}
                             </div>
                         
                         <div id="cart-inline-confirmation" class="alert d-none rounded-0 py-2 px-3 mt-2 border-0 animate-fade-in" style="background-color: #faf4f5; border-left: 3px solid var(--luxury-burgundy) !important;">
@@ -190,7 +212,7 @@
         <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top" style="border-color: #eae1d3 !important;">
             <div>
                 <span class="d-block text-muted small text-uppercase tracking-widest mb-1" style="font-size: 0.65rem;">Calculated Price</span>
-                <h4 class="font-serif m-0 fw-bold" id="modal-dynamic-price" style="color: var(--luxury-burgundy); font-size: 1.35rem;">Rs. 0.00</h4>
+                <h4 class="font-serif m-0 fw-bold" id="modal-dynamic-price" style="color: var(--luxury-burgundy); font-size: 1.35rem;">{% if product.variants.exists %}Rs. {{ product.variants.first.price|floatformat:2 }}{% else %}Rs. 0.00{% endif %}</h4>
             </div>
             <button type="button" class="btn btn-dark rounded-0 px-4 py-2 text-uppercase tracking-widest" onclick="applyCustomization()" style="font-size: 0.8rem; background-color: var(--luxury-burgundy); border-color: var(--luxury-burgundy); height: var(--btn-height-lg);">
                 Apply Options
@@ -244,13 +266,56 @@
         const galleryContainer = document.getElementById("product-thumb-gallery");
         if (galleryContainer) { galleryContainer.addEventListener("mouseenter", stopImageAutoScroll); galleryContainer.addEventListener("mouseleave", startImageAutoScroll); }
         if (productVariants.length > 0) { initCustomizationUI(); }
-        
-        // FIXED: Explicitly run the matcher immediately after rendering the UI 
-        // to force the modal price container to light up with your data straight away!
-        findMatchingVariant();
-        
+
+        // Only run findMatchingVariant when the modal actually opens.
+        // Running it on DOMContentLoaded fails silently because modal-dynamic-price
+        // doesn't exist in the DOM while the modal is hidden — leaving matchedVariant null.
+        const customizationModal = document.getElementById('customizationModal');
+        if (customizationModal) {
+            customizationModal.addEventListener('shown.bs.modal', function() {
+                findMatchingVariant();
+            });
+        }
+
         const activeForm = document.getElementById("add-to-vault-form");
         if (activeForm) { activeForm.addEventListener("submit", function() { const inlineAlert = document.getElementById("cart-inline-confirmation"); if (inlineAlert) { inlineAlert.classList.remove("d-none"); } }); }
+
+        // Wishlist heart button on detail page
+        const wishlistBtn = document.querySelector('.detail-wishlist-btn');
+        if (wishlistBtn) {
+            wishlistBtn.addEventListener('click', function() {
+                const productId = this.dataset.productId;
+                const variantId = document.getElementById('variant-selector').value;
+                const icon = this.querySelector('i');
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch("{% url 'product-add-wishlist' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: `product_id=${productId}&variant_id=${variantId}&csrfmiddlewaretoken=${csrfToken}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        if (data.action === 'removed') {
+                            icon.className = 'bi bi-heart text-muted';
+                            icon.style.fontSize = '1.1rem';
+                            wishlistBtn.title = 'Add to Wishlist';
+                        } else {
+                            icon.className = 'bi bi-heart-fill';
+                            icon.style.color = '#800020';
+                            icon.style.fontSize = '1.1rem';
+                            wishlistBtn.title = 'Remove from Wishlist';
+                        }
+                        // Update wishlist count in navbar if present
+                        const wishlistCount = document.querySelector('.wishlist-count-badge');
+                        if (wishlistCount && data.wishlist_count !== undefined) {
+                            wishlistCount.textContent = data.wishlist_count;
+                        }
+                    }
+                });
+            });
+        }
     });
 
     function initCustomizationUI() {
@@ -333,9 +398,25 @@
         if (!matchedVariant) { alert("This specific combination is currently unavailable."); return; }
         document.getElementById('variant-selector').value = matchedVariant.id;
         document.getElementById('dynamic-main-price').innerText = `Rs. ${matchedVariant.price}`;
-        let labelText = ""; if (matchedVariant.size !== 'Standard') labelText += `Size ${matchedVariant.size} | `;
-        labelText += `${matchedVariant.metal}`; if (matchedVariant.purity !== 'Standard' && matchedVariant.purity !== '—') labelText += ` | ${matchedVariant.purity}`;
-        document.getElementById('active-variant-label').innerText = labelText;
+        const variantLabel = document.getElementById('active-variant-label');
+
+        if (variantLabel) {
+            let parts = [];
+
+            if (matchedVariant.metal && matchedVariant.metal !== 'Standard')
+                parts.push(matchedVariant.metal);
+
+            if (matchedVariant.purity && matchedVariant.purity !== 'Standard' && matchedVariant.purity !== '—')
+                parts.push(matchedVariant.purity);
+
+            if (matchedVariant.size && matchedVariant.size !== 'Standard')
+                parts.push("Size " + matchedVariant.size);
+
+            if (parts.length === 0)
+                variantLabel.innerText = "Standard Configuration";
+            else
+                variantLabel.innerText = parts.join(" • ");
+        }
 
         if(document.getElementById('spec-gross')) document.getElementById('spec-gross').innerText = matchedVariant.gross_weight || '—';
         if(document.getElementById('spec-metal')) document.getElementById('spec-metal').innerText = matchedVariant.metal || '—';

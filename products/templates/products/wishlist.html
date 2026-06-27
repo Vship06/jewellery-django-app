@@ -7,14 +7,12 @@
 {% block content %}
 <div class="container pt-2 pb-5 mt-0">
     
-    <!-- Navigation Back Link with explicit 0.5rem bottom spacing -->
     <div class="animate-fade-in" style="margin-bottom: 0.5rem !important;">
         <a href="/" class="luxury-back-link text-decoration-none">
             ← Continue Browsing Collection
         </a>
     </div>
 
-  
     <h1 class="luxury-page-title mb-4 animate-fade-in">Your Curated Wishlist</h1>
 
     {% if cart_items %}
@@ -22,59 +20,69 @@
     <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 animate-fade-in">
         {% for item in cart_items %}
         <div class="col wishlist-item-card" data-item-id="{{ item.id }}">
-            <div class="card royal-card d-flex flex-column h-100 position-relative rounded-0 border shadow-sm" style="background-color: #f7f6f2;">
+            <div class="card royal-card d-flex flex-column h-100 position-relative rounded-0 border-0 shadow-sm" style="background-color: #f7f6f2;">
                 
-                
-                <div class="universal-img-frame bg-white" style="height: 170px !important;">
-                    <a href="{% url 'product-detail' pk=item.product.id %}" class="w-100 h-100 d-flex align-items-center justify-content-center">
-                        {% if item.product.image_links %}
-                            <img src="{{ item.product.image_links.0 }}" alt="{{ item.product.name }}" style="max-height: 90%; max-width: 90%; object-fit: contain; mix-blend-mode: multiply;">
-                        {% endif %}
-                    </a>
-                </div>
+                <!-- Image — clickable, full bleed with mix-blend -->
+                <a href="{% url 'product-detail' pk=item.product.id %}" class="text-decoration-none d-block position-relative overflow-hidden" style="background-color: #f7f6f2; border-bottom: 1px solid #eae1d3; height: 200px;">
+                    {% if item.product.image_links %}
+                        <img src="{{ item.product.image_links.0 }}" 
+                             alt="{{ item.product.name }}" 
+                             style="width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 1rem; transition: transform 0.4s ease;">
+                    {% else %}
+                        <div class="w-100 h-100 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-gem text-muted" style="font-size: 2rem; opacity: 0.2;"></i>
+                        </div>
+                    {% endif %}
+                </a>
 
                 <div class="p-3 d-flex flex-column flex-grow-1">
-                    <a href="{% url 'product-detail' pk=item.product.id %}" class="text-decoration-none mb-2 d-block">
-                        <h6 class="font-serif text-dark mb-0 text-truncate" style="font-size: 1.1rem; font-weight: 500;" title="{{ item.product.name }}">
+                    
+                    <!-- Product name -->
+                    <a href="{% url 'product-detail' pk=item.product.id %}" class="text-decoration-none d-block mb-1">
+                        <h6 class="font-serif text-dark mb-0" style="font-size: 0.95rem; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                             {{ item.product.name }}
                         </h6>
                     </a>
-                    
+
+                    <!-- SKU -->
+                    <p class="text-muted mb-2 font-monospace" style="font-size: 0.65rem; letter-spacing: 0.5px;">{{ item.product.sku }}</p>
+
+                    <!-- Price -->
                     <div class="mt-auto mb-3">
-                        <span class="font-serif fw-bold" style="font-size: 1.1rem; color: var(--luxury-burgundy);">
+                        <span class="font-serif fw-bold" style="font-size: 1.05rem; color: var(--luxury-burgundy, #800020);">
                             Rs. {{ item.productvariant.price|floatformat:2 }}
                         </span>
                     </div>
 
-                    <div class="d-flex flex-column gap-2 pt-2 border-top" style="border-color: #eae1d3 !important;">
-                        <!-- Primary CTA: Allocation to Shopping Vault -->
+                    <!-- Actions -->
+                    <div class="d-flex flex-column gap-2 pt-2" style="border-top: 1px dashed #eae1d3;">
+
+                        <!-- Add to Cart -->
                         <form action="{% url 'product-add-cart' %}" method="POST" class="ajax-wishlist-add-to-cart-form m-0 w-100">
                             {% csrf_token %}
                             <input type="hidden" name="product_id" value="{{ item.product.id }}">
                             <input type="hidden" name="variant_id" value="{{ item.productvariant.id }}">
                             <input type="hidden" name="quantity" value="1">
                             <input type="hidden" name="override_action" value="increment">
-                            <button type="submit" class="btn btn-dark w-100 rounded-0 py-2 text-uppercase tracking-widest d-flex justify-content-center align-items-center gap-2" style="background-color: #1a1a1a; font-size: 0.75rem; letter-spacing: 1.5px; height: var(--btn-height-md);">
-                                <i class="bi bi-bag-plus"></i> Add To Vault
+                            <button type="submit" class="btn btn-dark w-100 rounded-0 py-2 text-uppercase tracking-widest d-flex justify-content-center align-items-center gap-2" style="background-color: #1a1a1a; font-size: 0.7rem; letter-spacing: 1.5px; height: var(--btn-height-md);">
+                                <i class="bi bi-bag-plus" style="font-size: 0.8rem;"></i> Move to Vault
                             </button>
                         </form>
 
-                        <!-- Secondary Segment Interactions -->
-                        <div class="d-flex gap-2">
-                            <a href="{% url 'product-detail' pk=item.product.id %}" class="btn btn-outline-dark rounded-0 w-50 text-uppercase tracking-widest d-flex align-items-center justify-content-center" style="font-size: 0.65rem; letter-spacing: 1px; height: var(--btn-height-sm); border-color: #dee2e6;">
-                                View
-                            </a>
-                            <form action="{% url 'product-remove' %}" method="POST" class="ajax-wishlist-remove-form m-0 w-50">
-                                {% csrf_token %}
-                                <input type="hidden" name="item_id" value="{{ item.id }}">
-                                <input type="hidden" name="type" value="wishlist">
-                                <button type="submit" class="btn btn-outline-danger rounded-0 w-100 text-uppercase tracking-widest d-flex align-items-center justify-content-center" style="font-size: 0.65rem; letter-spacing: 1px; height: var(--btn-height-sm); transition: all 0.2s ease;">
-                                    Remove
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+                        <!-- Remove -->
+                        <form action="{% url 'product-remove' %}" method="POST" class="ajax-wishlist-remove-form m-0 w-100">
+                            {% csrf_token %}
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <input type="hidden" name="type" value="wishlist">
+                            <button type="submit" class="btn w-100 rounded-0 py-1 text-uppercase tracking-widest d-flex align-items-center justify-content-center gap-1" 
+                                    style="font-size: 0.65rem; letter-spacing: 1px; height: var(--btn-height-sm); color: #999; background: transparent; border: 1px solid #e0d8ce; transition: all 0.2s ease;"
+                                    onmouseover="this.style.color='#c94c4c'; this.style.borderColor='#c94c4c';"
+                                    onmouseout="this.style.color='#999'; this.style.borderColor='#e0d8ce';">
+                                <i class="bi bi-heart-slash" style="font-size: 0.75rem;"></i> Remove
+                            </button>
+                        </form>
 
+                    </div>
                 </div>
             </div>
         </div>
@@ -82,7 +90,6 @@
     </div>
     
     {% else %}
-    <!-- Empty Collection Segment Fallback view -->
     <div class="text-center py-5 my-5 animate-fade-in">
         <div class="mb-4">
             <i class="bi bi-heart text-muted" style="font-size: 3rem; opacity: 0.3;"></i>

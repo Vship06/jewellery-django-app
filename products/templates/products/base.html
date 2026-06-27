@@ -180,13 +180,16 @@
                 </div>
 
                 <div class="border-top pt-2" style="border-color: rgba(212, 175, 55, 0.2) !important;">
-                    <ul class="navbar-nav d-flex flex-row align-items-center gap-4 p-0 m-0 overflow-x-auto">
+                    <!-- ADDED: flex-nowrap and pb-1 to enable horizontal scrolling instead of wrapping invisible items -->
+                    <ul class="navbar-nav d-flex flex-row flex-nowrap align-items-center gap-4 p-0 m-0 overflow-x-auto pb-1" style="scrollbar-width: thin;">
                         <li class="nav-item">
-                            <a class="nav-link text-white p-0 {% if not selected_categories %}active text-warning fw-bold{% endif %} global-category-nav" href="javascript:void(0);" data-category="all">All</a>
+                            <!-- UPDATED: Active state check uses request.GET.category -->
+                            <a class="nav-link text-white p-0 {% if not request.GET.category or request.GET.category == 'all' %}active text-warning fw-bold{% endif %} global-category-nav" href="javascript:void(0);" data-category="all">All</a>
                         </li>
                         {% for category in categories %}
                             <li class="nav-item">
-                                <a class="nav-link text-white p-0 {% if category in selected_categories %}active text-warning fw-bold{% endif %} global-category-nav" href="javascript:void(0);" data-category="{{ category }}">
+                                <!-- ADDED: white-space: nowrap to prevent text breaking -->
+                                <a class="nav-link text-white p-0 {% if request.GET.category == category %}active text-warning fw-bold{% endif %} global-category-nav" href="javascript:void(0);" data-category="{{ category }}" style="white-space: nowrap;">
                                     {{ category }}
                                 </a>
                             </li>
